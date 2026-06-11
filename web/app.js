@@ -134,7 +134,7 @@ async function handleFiles(event) {
       const text = await file.text();
       loaded[file.name] = parseCsv(text);
     }
-    state.uploaded = loaded;
+    state.uploaded = { ...state.uploaded, ...loaded };
     const response = await postJson("/api/profile", { datasets: state.uploaded });
     state.uploadProfiles = response.profiles || [];
     initializeMappings(state.uploadProfiles);
@@ -142,9 +142,10 @@ async function handleFiles(event) {
     state.result = null;
     state.selectedId = null;
     el("erStatus").textContent = "Review mappings";
-    el("graphStatus").textContent = `${files.length} CSV loaded`;
+    el("graphStatus").textContent = `${Object.keys(state.uploaded).length} CSV loaded`;
     el("scoreStatus").textContent = "Ready to run";
     el("exportReport").disabled = true;
+    event.target.value = "";
   } catch (error) {
     alert(`CSV profiling failed: ${error.message}`);
   }
