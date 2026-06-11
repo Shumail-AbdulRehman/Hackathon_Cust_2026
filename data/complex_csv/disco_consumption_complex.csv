@@ -1,0 +1,17 @@
+meter_ref_no,consumer_name,installation_address,avg_monthly_bill_pkr,connection_type,phone_number,division,source_note
+LESCO-CX-0001,M. Ahmed Khan,H 21 St 4 DHA Ph 5 Lahore,310000,Residential,03001234567,Lahore,direct high utility
+LESCO-CX-0002,Household Khan,House 21 Street 4 DHA Phase 5 Lahore,220000,Residential,,Lahore,household high utility
+K-ELEC-CX-0003,Ali Raza Sheikh,Bungalow 18 Khayaban-e-Ittehad DHA Karachi,240000,Residential,03124567890,Karachi,proxy household high utility
+K-ELEC-CX-0004,Noman Raza,Bungalow 18 Khayaban e Ittehad DHA Karachi,180000,Residential,03124567890,Karachi,associate shared phone
+IESCO-CX-0005,Sara Malik,H 7 Street 16 F-10 Islamabad,32000,Residential,03331234567,Islamabad,normal bill
+IESCO-CX-0006,Usman Tariq,Flat 4 Blk C Bahria Town Rawalpindi,260000,Residential,03451230001,Rawalpindi,high bill with low income
+FESCO-CX-0007,Nadia Hussain,House 80 Jinnah Colony Faisalabad,105000,Residential,03219876543,Faisalabad,medium high bill
+MEPCO-CX-0008,Bilal Mahmood,House 9 Gulgasht Colony Multan,28000,Residential,03015550991,Multan,normal bill
+PESCO-CX-0009,Hira Noor,House 42 University Road Peshawar,21000,Residential,03445559000,Peshawar,normal bill
+QESCO-CX-0010,Kamran Ali,House 11 Zarghoon Road Quetta,275000,Residential,03335557891,Quetta,high bill
+LESCO-CX-0011,Zara Iqbal,H 33 Model Town Lahore,195000,Residential,03008881234,Lahore,proxy household high utility
+LESCO-CX-0012,Iqbal Ahmed,House 33 Model Twn Lahore,160000,Residential,03008881234,Lahore,associate high utility
+K-ELEC-CX-0013,Asif Khan,Flat 15 Clifton Block 5 Karachi,42000,Residential,03117770123,Karachi,normal bill
+IESCO-CX-0014,Farhan Qureshi,House 12 G-11 Islamabad,190000,Residential,03336660001,Islamabad,zero income high bill
+LESCO-CX-0015,Ayesha Siddiqui,House 91 Johar Town Lahore,36000,Residential,03224440002,Lahore,normal bill
+LESCO-CX-0016,Private Seller,Main Boulevard Gulberg Lahore,480000,Commercial,03009990000,Lahore,commercial outlier not target
