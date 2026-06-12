@@ -9,7 +9,7 @@ from .benford import benford_counts, benford_mad
 from .falkor_engine import run_communities, run_degrees, run_pagerank
 from .graph_engine import estimate_vehicle_value
 from .income_event_alignment import align_income_and_events
-from .nic_geocode import cnic_location
+from .nic_geocode import lookup_district
 from .scoring import clamp
 from .temporal_analysis import temporal_features
 
@@ -66,12 +66,16 @@ def build_entity_features(
         # NIC geocoding
         nic_provinces: set[str] = set()
         nic_districts: set[str] = set()
+        district_risk = 0
+        district_known = 0.0
         for r in records:
-            loc = cnic_location(r.get("national_id"))
+            loc = lookup_district(r.get("national_id"))
             if loc["province"]:
                 nic_provinces.add(loc["province"])
             if loc["district"]:
                 nic_districts.add(loc["district"])
+                district_risk = max(district_risk, loc["district_risk_score"])
+                district_known = 1.0
 
         lifestyle_pressure = utility_monthly + vehicle_value / 120 + property_value / 240
 
@@ -153,6 +157,8 @@ def build_entity_features(
             "unreported_asset_years": float(alignment["unreported_asset_years"]),
             "asset_burst_count": float(alignment["asset_burst_count"]),
             "total_unexplained_value": float(alignment["total_unexplained_value"]),
+            "district_known": district_known,
+            "district_risk_score": float(district_risk),
         }
 
     return features

@@ -123,6 +123,7 @@ def direct_score(agg: dict[str, Any]) -> tuple[float, dict[str, float], list[str
         "offshore_entity": min(offshore_count * 20, 60),
         "asset_burst": 20.0 if agg.get("asset_burst_detected") else 0.0,
         "income_event_gap": 0.0,
+        "district_risk": min(float(agg.get("district_risk_score") or 0) * 5, 12),
     }
 
     alignment_ratio = float(agg.get("max_asset_to_income_ratio") or 0.0)
@@ -151,6 +152,10 @@ def direct_score(agg: dict[str, Any]) -> tuple[float, dict[str, float], list[str
         reasons.append(f"asset burst detected: PKR {agg.get('asset_burst_window_value', 0):,.0f} within window")
     if components.get("income_event_gap", 0) > 0:
         reasons.append(f"asset acquisitions are {alignment_ratio:.0f}x declared income in a single year")
+    if components.get("district_risk", 0) > 0:
+        reasons.append(
+            f"CNIC prefix indicates a higher-reported-risk district (score {int(agg.get('district_risk_score', 0))})"
+        )
     if components["luxury_vehicle"] > 0:
         reasons.append(f"vehicle engine capacity reaches {agg['max_engine_cc']:.0f}cc")
     if components["property_value"] > 0:

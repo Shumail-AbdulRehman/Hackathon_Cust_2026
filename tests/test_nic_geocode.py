@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import pytest
 
-from taxnet.nic_geocode import cnic_location
+from taxnet.nic_geocode import DISTRICT_RISK_SCORES, cnic_location, extract_prefix, lookup_district
 
 
 @pytest.mark.parametrize(
@@ -41,3 +41,24 @@ def test_unknown_prefix() -> None:
     loc = cnic_location("9999912345671")
     assert loc["province"] == "Unknown"
     assert loc["district"] == ""
+
+
+def test_extract_prefix_from_cnic() -> None:
+    assert extract_prefix("35201-1234567-1") == "35201"
+    assert extract_prefix("abc") == ""
+
+
+def test_lookup_district_returns_risk() -> None:
+    loc = lookup_district("3520112345671")
+    assert loc["province"] == "Punjab"
+    assert loc["district"] == "Lahore"
+    assert loc["district_known"] is True
+    assert loc["district_risk_score"] == DISTRICT_RISK_SCORES["Lahore"]
+
+
+def test_lookup_district_unknown_prefix() -> None:
+    loc = lookup_district("9999912345671")
+    assert loc["province"] == "Unknown"
+    assert loc["district"] == ""
+    assert loc["district_known"] is False
+    assert loc["district_risk_score"] == 0
