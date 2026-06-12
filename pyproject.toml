@@ -1,0 +1,53 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "taxnet"
+version = "0.2.0"
+description = "TaxNet XAI — Pakistan-first tax fraud detection prototype"
+requires-python = ">=3.11"
+dependencies = [
+    "numpy>=1.26",
+    "pandas>=2.0",
+    "scikit-learn>=1.4",
+    "xgboost-cpu>=2.0,<3.0",
+    "shap>=0.45",
+    "falkordb>=1.0",
+    "openpyxl>=3.1.5",
+    "polars>=1.41.2",
+    "blockingpy>=0.2.8",
+    "model2vec>=0.8.2",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0",
+    "ruff>=0.4",
+]
+server = [
+    # File 1: law download + vectorless RAG index
+    "pymupdf4llm>=0.1",
+    "sentence-transformers>=3.0",
+    "faiss-cpu>=1.8",
+    "tqdm>=4.66",
+    "requests>=2.31",
+    # File 2: large dataset download + ML training
+    "kaggle>=1.6",
+    "huggingface_hub>=0.23",
+    "datasets>=2.19",
+    # File 3: SLM fine-tuning + GGUF export
+    # torch must be installed separately with the correct CUDA wheel for the server GPU.
+    "unsloth>=2024.12",
+    "transformers>=4.41",
+    "trl>=0.9",
+    "peft>=0.11",
+    "accelerate>=0.30",
+    "bitsandbytes>=0.43",
+]
+
+[tool.setuptools]
+packages = ["taxnet"]
+
+[tool.ruff]
+line-length = 120

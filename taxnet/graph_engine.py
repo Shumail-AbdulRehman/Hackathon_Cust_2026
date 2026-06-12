@@ -107,6 +107,12 @@ def build_graph(records: list[dict[str, Any]], resolution: dict[str, Any]) -> di
             label = str(record.get("property_type") or "Property")
             add_node(node_id, "Property", label, record)
             add_edge(entity_id, node_id, "BOUGHT_PROPERTY", 0.9, evidence)
+        elif record["record_type"] == "offshore_entity":
+            entity_name = str(record.get("offshore_entity_name") or "Offshore Entity").strip()
+            node_id = stable_id("OFFSHORE", f"{entity_name}:{record.get('offshore_jurisdiction') or ''}:{record.get('offshore_source') or ''}")
+            label = entity_name
+            add_node(node_id, "OffshoreEntity", label, record)
+            add_edge(entity_id, node_id, "LINKED_TO_OFFSHORE_ENTITY", 0.95, evidence)
 
     for norm_address, entity_ids in address_to_entities.items():
         sorted_ids = sorted(entity_ids)

@@ -5,7 +5,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any
 
-from .normalization import normalize_text
+from .normalization import normalize_national_id, normalize_text
 
 
 FIELD_SYNONYMS = {
@@ -44,6 +44,15 @@ FIELD_SYNONYMS = {
     "transfer_date": ["transfer_date", "sale_date", "transaction_date"],
     "area_marla": ["area_marla", "marla", "area"],
     "property_type": ["property_type", "property_category", "land_use"],
+    "national_id": [
+        "cnic",
+        "nic",
+        "national_id",
+        "ntn",
+        "national_id_number",
+        "cnic_no",
+        "icij_node_id",
+    ],
 }
 
 
@@ -92,6 +101,8 @@ def detect_kind(columns: list[str], dataset_name: str) -> str:
         return "utility"
     if any(token in joined for token in ("property", "registry", "transfer", "marla")):
         return "property"
+    if any(token in joined for token in ("offshore", "icij")):
+        return "offshore_entity"
     return "generic"
 
 
@@ -186,6 +197,7 @@ def canonicalize_datasets(
                         "person_name": value(row, mapping, "person_name"),
                         "address": value(row, mapping, "address"),
                         "phone": value(row, mapping, "phone"),
+                        "national_id": normalize_national_id(value(row, mapping, "national_id")),
                         "declared_income": clean_number(value(row, mapping, "declared_income")),
                         "tax_paid": clean_number(value(row, mapping, "tax_paid")),
                         "filer_status": str(value(row, mapping, "filer_status", "")).strip(),
@@ -198,6 +210,7 @@ def canonicalize_datasets(
                         "record_type": "vehicle",
                         "person_name": value(row, mapping, "person_name"),
                         "address": value(row, mapping, "address"),
+                        "national_id": normalize_national_id(value(row, mapping, "national_id")),
                         "vehicle_reg_no": value(row, mapping, "vehicle_reg_no"),
                         "engine_capacity_cc": clean_number(value(row, mapping, "engine_capacity_cc")),
                         "vehicle_make_model": value(row, mapping, "vehicle_make_model"),
@@ -211,6 +224,7 @@ def canonicalize_datasets(
                         "record_type": "utility",
                         "person_name": value(row, mapping, "person_name"),
                         "address": value(row, mapping, "address"),
+                        "national_id": normalize_national_id(value(row, mapping, "national_id")),
                         "meter_ref_no": value(row, mapping, "meter_ref_no"),
                         "monthly_bill": clean_number(value(row, mapping, "monthly_bill")),
                         "connection_type": value(row, mapping, "connection_type"),
@@ -226,11 +240,35 @@ def canonicalize_datasets(
                         "person_name": buyer_name,
                         "seller_name": seller_name,
                         "address": value(row, mapping, "address"),
+                        "national_id": normalize_national_id(value(row, mapping, "national_id")),
                         "registry_no": value(row, mapping, "registry_no"),
                         "property_value": clean_number(value(row, mapping, "property_value")),
                         "transfer_date": value(row, mapping, "transfer_date"),
                         "area_marla": clean_number(value(row, mapping, "area_marla")),
                         "property_type": value(row, mapping, "property_type"),
+                    }
+                )
+            elif kind == "offshore_entity":
+                records.append(
+                    {
+                        **base,
+                        "record_type": "offshore_entity",
+                        "person_name": value(row, mapping, "person_name"),
+                        "address": value(row, mapping, "address"),
+                        "national_id": normalize_national_id(value(row, mapping, "national_id")),
+                        "offshore_entity_name": value(row, mapping, "offshore_entity_name"),
+                        "offshore_jurisdiction": value(row, mapping, "offshore_jurisdiction"),
+                        "offshore_jurisdiction_description": value(row, mapping, "offshore_jurisdiction_description"),
+                        "offshore_status": value(row, mapping, "offshore_status"),
+                        "offshore_source": value(row, mapping, "offshore_source"),
+                        "offshore_service_provider": value(row, mapping, "offshore_service_provider"),
+                        "offshore_incorporation_date": value(row, mapping, "offshore_incorporation_date"),
+                        "offshore_inactivation_date": value(row, mapping, "offshore_inactivation_date"),
+                        "offshore_struck_off_date": value(row, mapping, "offshore_struck_off_date"),
+                        "offshore_relationship": value(row, mapping, "offshore_relationship"),
+                        "offshore_relationship_direction": value(row, mapping, "offshore_relationship_direction"),
+                        "offshore_person_countries": value(row, mapping, "offshore_person_countries"),
+                        "offshore_entity_countries": value(row, mapping, "offshore_entity_countries"),
                     }
                 )
             else:
@@ -241,6 +279,7 @@ def canonicalize_datasets(
                         "person_name": value(row, mapping, "person_name"),
                         "address": value(row, mapping, "address"),
                         "phone": value(row, mapping, "phone"),
+                        "national_id": normalize_national_id(value(row, mapping, "national_id")),
                     }
                 )
     return records, profiles

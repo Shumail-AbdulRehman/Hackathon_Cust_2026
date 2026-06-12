@@ -14,6 +14,22 @@ def clamp(value: float, low: float = 0.0, high: float = 100.0) -> float:
     return max(low, min(high, value))
 
 
+def tier_from_score(score: float) -> str:
+    if score <= 20:
+        return "green"
+    if score <= 40:
+        return "yellow"
+    if score <= 60:
+        return "orange"
+    if score <= 80:
+        return "red"
+    return "critical"
+
+
+# Alias used by ml_scorer and tests.
+risk_tier = tier_from_score
+
+
 def aggregate_entity(records: list[dict[str, Any]]) -> dict[str, Any]:
     tax_records = [r for r in records if r["record_type"] == "tax"]
     income_values = [r.get("declared_income", 0) for r in tax_records if r.get("declared_income", 0) > 0]
@@ -22,14 +38,24 @@ def aggregate_entity(records: list[dict[str, Any]]) -> dict[str, Any]:
     vehicles = [r for r in records if r["record_type"] == "vehicle"]
     properties = [r for r in records if r["record_type"] == "property"]
     utilities = [r for r in records if r["record_type"] == "utility"]
+    offshore_entities = [r for r in records if r["record_type"] == "offshore_entity"]
     vehicle_value = sum(estimate_vehicle_value(float(r.get("engine_capacity_cc") or 0)) for r in vehicles)
     property_value = sum(float(r.get("property_value") or 0) for r in properties)
     utility_monthly = sum(float(r.get("monthly_bill") or 0) for r in utilities)
     max_engine_cc = max([float(r.get("engine_capacity_cc") or 0) for r in vehicles] or [0])
+    offshore_count = len(offshore_entities)
+    offshore_jurisdictions = sorted({str(r.get("offshore_jurisdiction") or "").strip() for r in offshore_entities if r.get("offshore_jurisdiction")})
+    offshore_sources = sorted({str(r.get("offshore_source") or "").strip() for r in offshore_entities if r.get("offshore_source")})
     has_declared_income = bool(income_values)
     has_tax_record = bool(tax_records)
     income = max(income_values) if income_values else 0
     effective_income = income if has_declared_income else UNKNOWN_INCOME_BASELINE
+    pressure = lifestyle_pressure({
+        "monthly_utility_bill": utility_monthly,
+        "estimated_vehicle_value": vehicle_value,
+        "estimated_property_value": property_value,
+    })
+    lli_ratio = pressure / max(effective_income, 25_000)
     if has_declared_income:
         income_status = "reported"
     elif has_tax_record:
@@ -48,10 +74,14 @@ def aggregate_entity(records: list[dict[str, Any]]) -> dict[str, Any]:
         "vehicle_count": len(vehicles),
         "property_count": len(properties),
         "utility_meter_count": len(utilities),
+        "offshore_entity_count": offshore_count,
+        "offshore_jurisdictions": offshore_jurisdictions,
+        "offshore_sources": offshore_sources,
         "estimated_vehicle_value": vehicle_value,
         "estimated_property_value": property_value,
         "monthly_utility_bill": utility_monthly,
         "max_engine_cc": max_engine_cc,
+        "lli_ratio": lli_ratio,
         "records": records,
     }
 
@@ -73,8 +103,11 @@ def direct_score(agg: dict[str, Any]) -> tuple[float, dict[str, float], list[str
     pressure = lifestyle_pressure(agg)
     ratio = pressure / max(income, 25_000)
 
+    offshore_count = int(agg.get("offshore_entity_count") or 0)
+    lli_ratio = float(agg.get("lli_ratio") or 0.0)
     components = {
         "income_lifestyle_gap": clamp((ratio - 1.2) * 18, 0, 35),
+        "lli_gap": clamp((lli_ratio - 1.0) * 20, 0, 25),
         "luxury_vehicle": 18 if agg["max_engine_cc"] >= 2800 else 10 if agg["max_engine_cc"] >= 1800 else 0,
         "property_value": 20 if property_value >= 70_000_000 else 12 if property_value >= 30_000_000 else 0,
         "utility_pressure": 16 if monthly_bill >= 200_000 else 9 if monthly_bill >= 100_000 else 0,
@@ -82,6 +115,8 @@ def direct_score(agg: dict[str, Any]) -> tuple[float, dict[str, float], list[str
         if ("non-filer" in agg["filer_statuses"] or agg["has_tax_record"] and tax_paid == 0 and pressure > 150_000)
         else 0,
         "missing_tax_return": 10 if not agg["has_tax_record"] and pressure > 150_000 else 0,
+        "offshore_entity": min(offshore_count * 20, 60),
+        "asset_burst": 20.0 if agg.get("asset_burst_detected") else 0.0,
     }
     score = clamp(sum(components.values()))
 
@@ -93,6 +128,12 @@ def direct_score(agg: dict[str, Any]) -> tuple[float, dict[str, float], list[str
         uncertainty_flags.append("declared income unavailable; conservative baseline used")
     if components["income_lifestyle_gap"] > 0:
         reasons.append(f"lifestyle pressure is {ratio:.1f}x declared monthly income")
+    if components.get("lli_gap", 0) > 0:
+        reasons.append(f"living-luxury-income ratio is {lli_ratio:.1f}x")
+    if components.get("asset_burst", 0) > 0:
+        reasons.append(
+            f"asset burst detected: PKR {agg.get('asset_burst_window_value', 0):,.0f} within window"
+        )
     if components["luxury_vehicle"] > 0:
         reasons.append(f"vehicle engine capacity reaches {agg['max_engine_cc']:.0f}cc")
     if components["property_value"] > 0:
@@ -103,15 +144,34 @@ def direct_score(agg: dict[str, Any]) -> tuple[float, dict[str, float], list[str
         reasons.append("tax status or tax paid is inconsistent with lifestyle signals")
     if components["missing_tax_return"] > 0:
         reasons.append("high-value lifestyle signals have no linked tax return in the resolved entity")
+    if offshore_count > 0:
+        jurisdictions = ", ".join(agg.get("offshore_jurisdictions", [])[:3])
+        reasons.append(f"linked to {offshore_count} offshore entity(s) in {jurisdictions or 'unknown jurisdictions'}")
     if not reasons:
         reasons.append("direct records are broadly consistent with declared income")
     return score, components, reasons, uncertainty_flags
 
 
-def score_entities(graph: dict[str, Any], resolution: dict[str, Any]) -> dict[str, Any]:
+def score_entities(
+    graph: dict[str, Any],
+    resolution: dict[str, Any],
+    ml_model: Any | None = None,
+    falkor_summary: dict[str, Any] | None = None,
+) -> dict[str, Any]:
     entity_records = graph["entity_records"]
     entity_lookup = {entity["entity_id"]: entity for entity in resolution["entities"]}
     aggregates = {entity_id: aggregate_entity(records) for entity_id, records in entity_records.items()}
+
+    ml_scores: dict[str, float] = {}
+    shap_data: dict[str, Any] | None = None
+    if ml_model is not None:
+        from .ml_scorer import explain_with_shap, score_with_model
+
+        ml_scores = {
+            eid: data["deviation_score"]
+            for eid, data in score_with_model(ml_model, graph, resolution, falkor_summary).items()
+        }
+        shap_data = explain_with_shap(ml_model, graph, resolution, falkor_summary)
 
     neighbor_links: dict[str, list[dict[str, Any]]] = defaultdict(list)
     for edge in graph["edges"]:
@@ -164,7 +224,13 @@ def score_entities(graph: dict[str, Any], resolution: dict[str, Any]) -> dict[st
         income = float(agg["effective_monthly_income_for_scoring"])
         associate_ratio = associate_asset_value / max(income * 120, 3_000_000)
         associate_score = clamp((associate_ratio - 1.0) * 24 + strongest_link * 18, 0, 100)
-        final_score = clamp(max(direct, direct * 0.65 + associate_score * 0.55))
+        rule_score = clamp(max(direct, direct * 0.65 + associate_score * 0.55))
+
+        ml_score = ml_scores.get(entity_id)
+        if ml_score is not None:
+            final_score = clamp(0.6 * rule_score + 0.4 * ml_score)
+        else:
+            final_score = rule_score
 
         if final_score >= 75:
             level = "high"
@@ -172,6 +238,7 @@ def score_entities(graph: dict[str, Any], resolution: dict[str, Any]) -> dict[st
             level = "medium"
         else:
             level = "low"
+        tier = tier_from_score(final_score)
 
         source_rows = []
         for record in agg["records"]:
@@ -213,9 +280,13 @@ def score_entities(graph: dict[str, Any], resolution: dict[str, Any]) -> dict[st
                 "entity_id": entity_id,
                 "name": entity.get("canonical_name", entity_id),
                 "risk_level": level,
+                "risk_tier": tier,
                 "deviation_score": round(final_score, 1),
                 "direct_score": round(direct, 1),
                 "associate_proxy_score": round(associate_score, 1),
+                "ml_score": round(ml_score, 1) if ml_score is not None else None,
+                "shap_base_value": shap_data["base_value"] if shap_data else None,
+                "shap_features": shap_data["explanations"].get(entity_id, [])[:8] if shap_data else [],
                 "risk_basis": risk_basis,
                 "scoring_confidence": round(scoring_confidence, 1),
                 "evidence_coverage": round(evidence_coverage, 1),
@@ -296,7 +367,7 @@ def robust_z_score(value: float, values: list[float]) -> float:
 
 
 def evidence_coverage_score(agg: dict[str, Any], source_count: int) -> float:
-    has_asset = bool(agg["vehicle_count"] or agg["property_count"])
+    has_asset = bool(agg["vehicle_count"] or agg["property_count"] or agg.get("offshore_entity_count"))
     has_utility = bool(agg["utility_meter_count"])
     coverage = 0.0
     coverage += 35 if agg["has_tax_record"] else 0

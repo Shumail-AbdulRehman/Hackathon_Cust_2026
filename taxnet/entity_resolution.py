@@ -3,9 +3,12 @@
 from __future__ import annotations
 
 from collections import defaultdict
+from concurrent.futures import ProcessPoolExecutor
 from dataclasses import dataclass
 from itertools import combinations
 from typing import Any
+
+from .ann_blocking import ann_candidate_pairs
 
 from .normalization import (
     address_block,
@@ -15,27 +18,14 @@ from .normalization import (
     ngram_embedding_similarity,
     normalize_address,
     normalize_name,
+    normalize_national_id,
     normalize_phone,
     phonetic_similarity,
     sequence_score,
     surname,
     token_similarity,
 )
-
-
-@dataclass
-class RecordFingerprint:
-    record_id: str
-    person_name: str
-    norm_name: str
-    address: str
-    norm_address: str
-    phone: str
-    city: str
-    block_key: str
-    source_dataset: str
-    source_kind: str
-    truth_person_id: str
+from .types import RecordFingerprint
 
 
 class UnionFind:
@@ -60,6 +50,7 @@ def fingerprint(record: dict[str, Any]) -> RecordFingerprint:
     name = str(record.get("person_name") or "")
     address = str(record.get("address") or "")
     phone = normalize_phone(record.get("phone", ""))
+    national_id = normalize_national_id(record.get("national_id", ""))
     return RecordFingerprint(
         record_id=source_ref,
         person_name=name,
@@ -67,6 +58,7 @@ def fingerprint(record: dict[str, Any]) -> RecordFingerprint:
         address=address,
         norm_address=normalize_address(address),
         phone=phone,
+        national_id=national_id,
         city=city_hint(address),
         block_key=address_block(address),
         source_dataset=record["source_dataset"],
@@ -78,6 +70,11 @@ def fingerprint(record: dict[str, Any]) -> RecordFingerprint:
 def should_compare(left: RecordFingerprint, right: RecordFingerprint) -> bool:
     if left.record_id == right.record_id:
         return False
+    # If both sides have national IDs and they disagree, they are different people.
+    if left.national_id and right.national_id and left.national_id != right.national_id:
+        return False
+    if left.national_id and right.national_id and left.national_id == right.national_id:
+        return True
     if left.phone and right.phone and left.phone == right.phone:
         return True
     if left.city and right.city and left.city == right.city and surname(left.norm_name) == surname(right.norm_name):
@@ -97,8 +94,17 @@ def should_compare(left: RecordFingerprint, right: RecordFingerprint) -> bool:
     return False
 
 
+def asset_range_key(fp: RecordFingerprint) -> str | None:
+    surname_value = surname(fp.norm_name)
+    if fp.city and surname_value:
+        return f"asset_city_surname:{fp.city}:{surname_value}"
+    return None
+
+
 def blocking_keys(fp: RecordFingerprint) -> list[str]:
     keys = []
+    if fp.national_id:
+        keys.append(f"national_id:{fp.national_id}")
     if fp.phone:
         keys.append(f"phone:{fp.phone}")
     name_surname = surname(fp.norm_name)
@@ -110,6 +116,9 @@ def blocking_keys(fp: RecordFingerprint) -> list[str]:
         keys.append(f"initial_surname:{first_initial(fp.norm_name)}:{name_surname}")
     if fp.city and first_initial(fp.norm_name):
         keys.append(f"city_first:{fp.city}:{first_initial(fp.norm_name)}")
+    asset_key = asset_range_key(fp)
+    if asset_key:
+        keys.append(asset_key)
     return keys
 
 
@@ -138,6 +147,7 @@ def compare_records(left: RecordFingerprint, right: RecordFingerprint) -> dict[s
     name_score = max(token_name_score, phonetic_name_score * 0.92, embedding_name_score * 0.9)
     address_score = sequence_score(left.norm_address, right.norm_address)
     same_phone = bool(left.phone and right.phone and left.phone == right.phone)
+    same_national_id = bool(left.national_id and right.national_id and left.national_id == right.national_id)
     same_city = bool(left.city and right.city and left.city == right.city)
     initial_ok = initials_compatible(left.norm_name, right.norm_name)
     same_surname = bool(surname(left.norm_name) and surname(left.norm_name) == surname(right.norm_name))
@@ -150,6 +160,7 @@ def compare_records(left: RecordFingerprint, right: RecordFingerprint) -> dict[s
 
     phone_score = 1.0 if same_phone else 0.0
     city_score = 1.0 if same_city else 0.0
+    national_id_score = 1.0 if same_national_id else 0.0
     initial_bonus = 0.08 if initial_ok and same_surname else 0.0
     if initial_ok and same_surname and address_score >= 0.7:
         initial_bonus += 0.16
@@ -165,8 +176,12 @@ def compare_records(left: RecordFingerprint, right: RecordFingerprint) -> dict[s
         + address_score * 0.22
         + phone_score * 0.18
         + city_score * 0.04
+        + national_id_score * 0.40
         + initial_bonus
     )
+
+    if same_national_id:
+        score = max(score, 0.96)
 
     # A shared phone/address alone can indicate relatives or proxies, not the same person.
     if name_score < 0.42 and not (initial_ok and same_surname):
@@ -174,6 +189,8 @@ def compare_records(left: RecordFingerprint, right: RecordFingerprint) -> dict[s
 
     confidence = round(max(0.0, min(1.0, score)) * 100, 1)
     reasons = []
+    if same_national_id:
+        reasons.append("same national ID")
     if name_score >= 0.82:
         reasons.append("high name similarity")
     elif initial_ok and same_surname:
@@ -204,6 +221,7 @@ def compare_records(left: RecordFingerprint, right: RecordFingerprint) -> dict[s
             "ngram_embedding_score": round(embedding_name_score, 3),
             "address_score": round(address_score, 3),
             "same_phone": same_phone,
+            "same_national_id": same_national_id,
             "same_city": same_city,
             "initials_compatible": initial_ok,
             "same_first_initial": same_first_initial,
@@ -213,22 +231,82 @@ def compare_records(left: RecordFingerprint, right: RecordFingerprint) -> dict[s
     }
 
 
-def resolve_entities(records: list[dict[str, Any]]) -> dict[str, Any]:
+_PAIR_LOOKUP: dict[str, RecordFingerprint] = {}
+
+
+def _compare_pair(pair: tuple[str, str]) -> dict[str, Any]:
+    """Standalone comparator for process-pool parallelism."""
+    left_id, right_id = pair
+    left = _PAIR_LOOKUP.get(left_id)
+    right = _PAIR_LOOKUP.get(right_id)
+    if left is None or right is None:
+        return {"left": left_id, "right": right_id, "decision": "reject", "confidence": 0.0}
+    return compare_records(left, right)
+
+
+def _exact_merge_groups(fingerprints: list[RecordFingerprint]) -> list[tuple[str, str]]:
+    """Return pairs that should be merged immediately based on exact IDs."""
+    by_national_id: dict[str, list[str]] = defaultdict(list)
+    by_phone: dict[str, list[str]] = defaultdict(list)
+    for fp in fingerprints:
+        if fp.national_id:
+            by_national_id[fp.national_id].append(fp.record_id)
+        if fp.phone:
+            by_phone[fp.phone].append(fp.record_id)
+
+    pairs: set[tuple[str, str]] = set()
+    for ids in by_national_id.values():
+        for left, right in combinations(sorted(ids), 2):
+            pairs.add((left, right))
+    for ids in by_phone.values():
+        for left, right in combinations(sorted(ids), 2):
+            pairs.add((left, right))
+    return list(pairs)
+
+
+def resolve_entities(
+    records: list[dict[str, Any]],
+    parallel: bool = True,
+    max_workers: int | None = None,
+    use_ann_blocking: bool = False,
+) -> dict[str, Any]:
     fingerprints = [fingerprint(record) for record in records if record.get("person_name")]
     by_id = {fp.record_id: fp for fp in fingerprints}
     uf = UnionFind([fp.record_id for fp in fingerprints])
     comparisons = len(fingerprints) * (len(fingerprints) - 1) // 2
-    pairs = candidate_pairs(fingerprints)
+
+    # Phase 1: exact-match merges (national_id / phone) — no fuzzy comparison needed.
+    for left_id, right_id in _exact_merge_groups(fingerprints):
+        uf.union(left_id, right_id)
+
+    # Phase 2: blocking + fuzzy comparison on remaining candidates.
+    if use_ann_blocking:
+        pairs = ann_candidate_pairs(fingerprints)
+    else:
+        pairs = candidate_pairs(fingerprints)
     candidates = len(pairs)
     matches: list[dict[str, Any]] = []
     possibles: list[dict[str, Any]] = []
 
-    for left_id, right_id in sorted(pairs):
-        left = by_id[left_id]
-        right = by_id[right_id]
-        result = compare_records(left, right)
+    pair_list = sorted(pairs)
+    results: list[dict[str, Any]] = []
+    if parallel and len(pair_list) > 200:
+        global _PAIR_LOOKUP
+        _PAIR_LOOKUP = by_id
+        try:
+            workers = max_workers or min(8, max(2, (len(pair_list) // 500) + 1))
+            with ProcessPoolExecutor(max_workers=workers) as executor:
+                results = list(
+                    executor.map(_compare_pair, pair_list, chunksize=max(1, len(pair_list) // workers // 4))
+                )
+        finally:
+            _PAIR_LOOKUP = {}
+    else:
+        results = [compare_records(by_id[left_id], by_id[right_id]) for left_id, right_id in pair_list]
+
+    for result in results:
         if result["decision"] == "match":
-            uf.union(left.record_id, right.record_id)
+            uf.union(result["left"], result["right"])
             matches.append(result)
         elif result["decision"] == "possible":
             possibles.append(result)

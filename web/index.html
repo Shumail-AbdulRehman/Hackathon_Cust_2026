@@ -1,156 +1,18 @@
 <!doctype html>
 <html lang="en">
   <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>TaxNet XAI</title>
-    <link rel="stylesheet" href="/styles.css" />
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>TaxNet XAI — Audit Dashboard</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=JetBrains+Mono:wght@400;500;600&family=Source+Sans+3:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
   </head>
   <body>
-    <header class="topbar">
-      <div>
-        <p class="eyebrow">CUST Hackathon 2026</p>
-        <h1>TaxNet XAI</h1>
-      </div>
-      <div class="top-actions">
-        <button id="runDemo" class="primary">Run synthetic audit</button>
-        <label class="file-button">
-          <input id="fileInput" type="file" accept=".csv" multiple />
-          Load CSVs
-        </label>
-        <button id="runFiles">Run uploaded files</button>
-        <label class="benchmark-control">
-          <span>Citizens</span>
-          <input id="benchmarkCitizens" type="number" min="1" max="5000" value="500" />
-        </label>
-        <button id="runBenchmark">Benchmark</button>
-        <button id="exportReport" disabled>Export report</button>
-      </div>
-    </header>
-
-    <main class="shell">
-      <section class="panel pipeline-panel">
-        <div class="pipeline-step active">
-          <span>01</span>
-          <strong>Entity Resolution</strong>
-          <small id="erStatus">Ready</small>
-        </div>
-        <div class="pipeline-step">
-          <span>02</span>
-          <strong>Knowledge Graph</strong>
-          <small id="graphStatus">Waiting</small>
-        </div>
-        <div class="pipeline-step">
-          <span>03</span>
-          <strong>Deviation + XAI</strong>
-          <small id="scoreStatus">Waiting</small>
-        </div>
-      </section>
-
-      <section class="metrics" id="metrics"></section>
-
-      <section id="mappingPanel" class="panel mapping-panel" hidden>
-        <div class="panel-head">
-          <div>
-            <p class="eyebrow">Schema review</p>
-            <h2>CSV Field Mapping</h2>
-          </div>
-          <span class="count" id="mappingCount">0</span>
-        </div>
-        <div id="mappingReview" class="mapping-review"></div>
-      </section>
-
-      <section class="workspace">
-        <aside class="panel queue-panel">
-          <div class="panel-head">
-            <div>
-              <p class="eyebrow">Audit queue</p>
-              <h2>Flagged Profiles</h2>
-            </div>
-            <span id="queueCount" class="count">0</span>
-          </div>
-          <div class="table-wrap">
-            <table>
-              <thead>
-                <tr>
-                  <th>Entity</th>
-                  <th>Risk</th>
-                  <th>Score</th>
-                </tr>
-              </thead>
-              <tbody id="profileRows"></tbody>
-            </table>
-          </div>
-        </aside>
-
-        <section class="detail-grid">
-          <div class="panel graph-panel">
-            <div class="panel-head">
-              <div>
-                <p class="eyebrow">Graph evidence</p>
-                <h2 id="graphTitle">No entity selected</h2>
-              </div>
-              <span id="selectedScore" class="score-pill">0</span>
-            </div>
-            <svg id="graphSvg" viewBox="0 0 760 360" role="img" aria-label="Evidence graph"></svg>
-          </div>
-
-          <div class="panel detail-panel">
-            <div class="panel-head">
-              <div>
-                <p class="eyebrow">Audit trail</p>
-                <h2 id="detailTitle">Run the pipeline</h2>
-              </div>
-              <span id="riskLevel" class="risk low">low</span>
-            </div>
-            <p id="explanation" class="explanation">Use the synthetic audit or upload CSV files.</p>
-            <div id="scoreBreakdown" class="breakdown"></div>
-          </div>
-        </section>
-      </section>
-
-      <section class="lower-grid">
-        <section class="panel resolution-panel">
-          <div class="panel-head">
-            <div>
-              <p class="eyebrow">Resolution + XAI</p>
-              <h2>Confidence Review</h2>
-            </div>
-          </div>
-          <div id="confidencePanel" class="confidence-panel"></div>
-          <div id="matchEvidence" class="match-evidence"></div>
-        </section>
-
-        <section class="panel">
-          <div class="panel-head">
-            <div>
-              <p class="eyebrow">Source evidence</p>
-              <h2>Rows Used</h2>
-            </div>
-          </div>
-          <div id="sourceRows" class="source-rows"></div>
-        </section>
-
-        <section class="panel">
-          <div class="panel-head">
-            <div>
-              <p class="eyebrow">Ingestion</p>
-              <h2>Dataset Profiles</h2>
-            </div>
-          </div>
-          <div id="datasetProfiles" class="dataset-profiles"></div>
-        </section>
-      </section>
-    </main>
-
-    <template id="metricTemplate">
-      <div class="metric">
-        <span></span>
-        <strong></strong>
-      </div>
-    </template>
-
-    <script src="/app.js"></script>
+    <div id="root"></div>
+    <script type="module" src="/src/main.jsx"></script>
   </body>
 </html>
-

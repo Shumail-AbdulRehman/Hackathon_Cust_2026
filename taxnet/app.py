@@ -14,7 +14,7 @@ from .ingestion import profile_datasets
 from .pipeline import compact_result, run_benchmark, run_pipeline
 
 ROOT = Path(__file__).resolve().parents[1]
-WEB = ROOT / "web"
+WEB = ROOT / "web" / "dist"
 
 
 def bounded_int(value: Any, default: int, low: int, high: int) -> int:
@@ -54,7 +54,7 @@ class TaxNetHandler(BaseHTTPRequestHandler):
     def do_GET(self) -> None:
         parsed = urlparse(self.path)
         if parsed.path == "/api/health":
-            self.send_json({"ok": True, "service": "taxnet-xai"})
+            self.send_json({"ok": True, "service": "taxnet-xai", "falkordb": falkor_health()})
             return
         if parsed.path == "/api/demo":
             result = compact_result(run_pipeline())
@@ -101,6 +101,16 @@ class TaxNetHandler(BaseHTTPRequestHandler):
             self.send_json({"error": f"Invalid JSON: {exc}"}, status=400)
         except Exception as exc:  # pragma: no cover - server safety
             self.send_json({"error": str(exc)}, status=500)
+
+def falkor_health() -> dict[str, Any]:
+    try:
+        from .falkor_engine import get_falkordb_client
+
+        client = get_falkordb_client()
+        client.connection.ping()
+        return {"ok": True}
+    except Exception as exc:
+        return {"ok": False, "error": str(exc)}
 
 
 def main() -> None:
