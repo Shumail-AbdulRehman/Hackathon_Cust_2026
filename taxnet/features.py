@@ -8,6 +8,7 @@ from typing import Any
 from .benford import benford_counts, benford_mad
 from .falkor_engine import run_communities, run_degrees, run_pagerank
 from .graph_engine import estimate_vehicle_value
+from .income_event_alignment import align_income_and_events
 from .nic_geocode import cnic_location
 from .scoring import clamp
 from .temporal_analysis import temporal_features
@@ -82,6 +83,9 @@ def build_entity_features(
         # Temporal analysis
         temporal = temporal_features(records)
 
+        # Income-event alignment
+        alignment = align_income_and_events(records)
+
         # Benford's Law analysis across numeric columns (per-entity, small samples usually yield 0 MAD)
         benford_fields = {
             "income": [r.get("declared_income") for r in tax_records],
@@ -145,6 +149,10 @@ def build_entity_features(
             "asset_burst_detected": float(temporal["asset_burst_detected"]),
             "asset_burst_window_value": temporal["asset_burst_window_value"],
             "asset_burst_window_event_count": float(temporal["asset_burst_window_event_count"]),
+            "max_asset_to_income_ratio": float(alignment["max_asset_to_income_ratio"]),
+            "unreported_asset_years": float(alignment["unreported_asset_years"]),
+            "asset_burst_count": float(alignment["asset_burst_count"]),
+            "total_unexplained_value": float(alignment["total_unexplained_value"]),
         }
 
     return features

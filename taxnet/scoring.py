@@ -44,17 +44,23 @@ def aggregate_entity(records: list[dict[str, Any]]) -> dict[str, Any]:
     utility_monthly = sum(float(r.get("monthly_bill") or 0) for r in utilities)
     max_engine_cc = max([float(r.get("engine_capacity_cc") or 0) for r in vehicles] or [0])
     offshore_count = len(offshore_entities)
-    offshore_jurisdictions = sorted({str(r.get("offshore_jurisdiction") or "").strip() for r in offshore_entities if r.get("offshore_jurisdiction")})
-    offshore_sources = sorted({str(r.get("offshore_source") or "").strip() for r in offshore_entities if r.get("offshore_source")})
+    offshore_jurisdictions = sorted(
+        {str(r.get("offshore_jurisdiction") or "").strip() for r in offshore_entities if r.get("offshore_jurisdiction")}
+    )
+    offshore_sources = sorted(
+        {str(r.get("offshore_source") or "").strip() for r in offshore_entities if r.get("offshore_source")}
+    )
     has_declared_income = bool(income_values)
     has_tax_record = bool(tax_records)
     income = max(income_values) if income_values else 0
     effective_income = income if has_declared_income else UNKNOWN_INCOME_BASELINE
-    pressure = lifestyle_pressure({
-        "monthly_utility_bill": utility_monthly,
-        "estimated_vehicle_value": vehicle_value,
-        "estimated_property_value": property_value,
-    })
+    pressure = lifestyle_pressure(
+        {
+            "monthly_utility_bill": utility_monthly,
+            "estimated_vehicle_value": vehicle_value,
+            "estimated_property_value": property_value,
+        }
+    )
     lli_ratio = pressure / max(effective_income, 25_000)
     if has_declared_income:
         income_status = "reported"
@@ -96,7 +102,6 @@ def lifestyle_pressure(agg: dict[str, Any]) -> float:
 
 def direct_score(agg: dict[str, Any]) -> tuple[float, dict[str, float], list[str], list[str]]:
     income = float(agg["effective_monthly_income_for_scoring"])
-    vehicle_value = float(agg["estimated_vehicle_value"])
     property_value = float(agg["estimated_property_value"])
     monthly_bill = float(agg["monthly_utility_bill"])
     tax_paid = float(agg["tax_paid"])
@@ -117,7 +122,19 @@ def direct_score(agg: dict[str, Any]) -> tuple[float, dict[str, float], list[str
         "missing_tax_return": 10 if not agg["has_tax_record"] and pressure > 150_000 else 0,
         "offshore_entity": min(offshore_count * 20, 60),
         "asset_burst": 20.0 if agg.get("asset_burst_detected") else 0.0,
+        "income_event_gap": 0.0,
     }
+
+    alignment_ratio = float(agg.get("max_asset_to_income_ratio") or 0.0)
+    unreported_years = int(agg.get("unreported_asset_years") or 0)
+    unexplained = float(agg.get("total_unexplained_value") or 0.0)
+    if alignment_ratio > 50:
+        components["income_event_gap"] = clamp((alignment_ratio - 50) / 50 * 20, 0, 25)
+    elif unreported_years > 0:
+        components["income_event_gap"] = min(15.0, unreported_years * 8)
+    elif unexplained > 5_000_000:
+        components["income_event_gap"] = 10.0
+
     score = clamp(sum(components.values()))
 
     reasons = []
@@ -131,9 +148,9 @@ def direct_score(agg: dict[str, Any]) -> tuple[float, dict[str, float], list[str
     if components.get("lli_gap", 0) > 0:
         reasons.append(f"living-luxury-income ratio is {lli_ratio:.1f}x")
     if components.get("asset_burst", 0) > 0:
-        reasons.append(
-            f"asset burst detected: PKR {agg.get('asset_burst_window_value', 0):,.0f} within window"
-        )
+        reasons.append(f"asset burst detected: PKR {agg.get('asset_burst_window_value', 0):,.0f} within window")
+    if components.get("income_event_gap", 0) > 0:
+        reasons.append(f"asset acquisitions are {alignment_ratio:.0f}x declared income in a single year")
     if components["luxury_vehicle"] > 0:
         reasons.append(f"vehicle engine capacity reaches {agg['max_engine_cc']:.0f}cc")
     if components["property_value"] > 0:
@@ -379,7 +396,10 @@ def evidence_coverage_score(agg: dict[str, Any], source_count: int) -> float:
 
 def possible_matches_for_entities(resolution: dict[str, Any]) -> dict[str, list[dict[str, Any]]]:
     record_to_entity = resolution.get("record_to_entity", {})
-    entity_names = {entity["entity_id"]: entity.get("canonical_name", entity["entity_id"]) for entity in resolution.get("entities", [])}
+    entity_names = {
+        entity["entity_id"]: entity.get("canonical_name", entity["entity_id"])
+        for entity in resolution.get("entities", [])
+    }
     possible_by_entity: dict[str, list[dict[str, Any]]] = defaultdict(list)
     for match in resolution.get("possible_matches", []):
         left_entity = record_to_entity.get(match["left"])
