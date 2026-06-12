@@ -195,6 +195,17 @@ def load_uk_companies_house(data_dir: Path, sample_fraction: float = 0.05) -> di
         log("WARNING: UK Companies House data not found; skipping.")
         return {}
 
+    def _find_column(columns: list[str], *needles: str) -> str | None:
+        for needle in needles:
+            for col in columns:
+                if needle.lower() == col.lower():
+                    return col
+        for needle in needles:
+            for col in columns:
+                if needle.lower() in col.lower():
+                    return col
+        return None
+
     log(f"Loading UK Companies House sample (fraction={sample_fraction}) ...")
     basic_csv = data_dir / "basic_company_data.csv"
     if not basic_csv.exists():
@@ -215,18 +226,19 @@ def load_uk_companies_house(data_dir: Path, sample_fraction: float = 0.05) -> di
     # Read a sample of active companies. Use infer_schema_length=0 to keep all
     # columns as strings and avoid mixed-type parsing errors (e.g. POBox numbers).
     basic_df = pl.read_csv(basic_csv, infer_schema_length=0, null_values=["", "NULL", "N/A"])
-    if "CompanyStatus" in basic_df.columns:
-        basic_df = basic_df.filter(pl.col("CompanyStatus").str.to_lowercase() == "active")
-    company_cols = [c for c in basic_df.columns if "CompanyName" in c or "CompanyNumber" in c]
-    if not company_cols:
-        log("WARNING: UK basic data has unexpected columns; skipping.")
+    status_col = _find_column(basic_df.columns, "CompanyStatus")
+    number_col = _find_column(basic_df.columns, "CompanyNumber")
+    name_col = _find_column(basic_df.columns, "CompanyName")
+    if not number_col:
+        log(f"WARNING: UK basic data has unexpected columns: {basic_df.columns[:10]}; skipping.")
         return {}
+    if status_col:
+        basic_df = basic_df.filter(pl.col(status_col).str.to_lowercase() == "active")
 
     sample_n = max(1, int(basic_df.height * sample_fraction))
-    sampled_companies = basic_df.sample(n=sample_n, seed=42).select(
-        [pl.col(c) for c in basic_df.columns if "CompanyNumber" in c or "CompanyName" in c]
-    )
-    company_numbers = set(str(x) for x in sampled_companies["CompanyNumber"].to_list())
+    select_cols = [c for c in (number_col, name_col) if c]
+    sampled_companies = basic_df.sample(n=sample_n, seed=42).select([pl.col(c) for c in select_cols])
+    company_numbers = set(str(x) for x in sampled_companies[number_col].to_list())
 
     # Load matching PSC records.
     records: list[dict[str, Any]] = []
