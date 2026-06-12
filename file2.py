@@ -263,52 +263,100 @@ def load_uk_companies_house(data_dir: Path, sample_fraction: float = 0.05) -> di
 
 
 def load_elliptic(data_dir: Path, sample_fraction: float = 0.2) -> dict[str, list[dict[str, Any]]]:
-    """Load a sample of Elliptic++ transaction data.
+    """Load a sample of Elliptic++ wallet data.
 
-    Expects files like:
-        data_dir/txs.csv
-        data_dir/edges.csv
-        data_dir/classes.csv
+    Accepts the actual download layout:
+        data_dir/wallets_features_classes_combined.csv
+        data_dir/wallets_features.csv + data_dir/wallets_classes.csv
+        data_dir/txs_features.csv + data_dir/txs_classes.csv
     """
-    txs_path = data_dir / "txs.csv"
-    edges_path = data_dir / "edges.csv"
-    classes_path = data_dir / "classes.csv"
 
-    if not txs_path.exists() or not edges_path.exists() or not classes_path.exists():
-        log("WARNING: Elliptic++ data not found; skipping.")
-        return {}
+    def _find_id_column(columns: list[str]) -> str | None:
+        candidates = ["wallet_id", "walletId", "wallet", "address", "txId", "tx_id"]
+        for col in columns:
+            if col.lower() in candidates:
+                return col
+        return columns[0] if columns else None
 
-    log(f"Loading Elliptic++ sample (fraction={sample_fraction}) ...")
-    txs_df = pl.read_csv(txs_path, infer_schema_length=1000)
-    classes_df = pl.read_csv(classes_path, infer_schema_length=1000)
+    def _find_class_column(columns: list[str]) -> str | None:
+        for col in columns:
+            if "class" in col.lower():
+                return col
+        return None
 
-    # Classes typically: txId, class (1=illicit, 2=licit, 3=unknown)
-    labeled = classes_df.filter(pl.col("class").is_in([1, 2]))
-    sample_n = max(1, int(labeled.height * sample_fraction))
-    sampled_txids = set(int(x) for x in labeled.sample(n=sample_n, seed=42)["txId"].to_list())
+    def _load_from_features_classes(
+        features_path: Path, classes_path: Path, prefix: str
+    ) -> list[dict[str, Any]] | None:
+        if not features_path.exists() or not classes_path.exists():
+            return None
+        features_df = pl.read_csv(features_path, infer_schema_length=1000)
+        classes_df = pl.read_csv(classes_path, infer_schema_length=1000)
+        id_col = _find_id_column(classes_df.columns)
+        class_col = _find_class_column(classes_df.columns)
+        if not id_col or not class_col:
+            return None
 
-    # Build a mapping from txId to class label.
-    class_map = {int(row["txId"]): int(row["class"]) for row in classes_df.to_dicts()}
+        labeled = classes_df.filter(pl.col(class_col).is_in([1, 2]))
+        sample_n = max(1, int(labeled.height * sample_fraction))
+        sampled_ids = set(str(x) for x in labeled.sample(n=sample_n, seed=42)[id_col].to_list())
 
-    records: list[dict[str, Any]] = []
-    for row in tqdm(txs_df.to_dicts(), desc="Elliptic", total=txs_df.height):
-        txid = int(row.get("txId") or 0)
-        if txid not in sampled_txids:
-            continue
-        cls = class_map.get(txid, 3)
-        records.append(
-            {
-                "source_row_id": f"elliptic-{txid}",
-                "person_name": f"elliptic_account_{txid}",
-                "address": f"tx_{txid}",
-                "national_id": f"elliptic_{txid}",
-                "elliptic_tx_id": txid,
-                "elliptic_class": cls,
-                "_kind": "generic",
-            }
-        )
+        class_map = {str(row[id_col]): int(row[class_col]) for row in classes_df.to_dicts()}
+        records: list[dict[str, Any]] = []
+        for row in tqdm(features_df.to_dicts(), desc=f"Elliptic {prefix}", total=features_df.height):
+            item_id = str(row.get(id_col) or "")
+            if item_id not in sampled_ids:
+                continue
+            cls = class_map.get(item_id, 3)
+            records.append(
+                {
+                    "source_row_id": f"elliptic-{prefix}-{item_id}",
+                    "person_name": f"elliptic_{prefix}_{item_id}",
+                    "address": f"{prefix}_{item_id}",
+                    "national_id": f"elliptic_{prefix}_{item_id}",
+                    "elliptic_id": item_id,
+                    "elliptic_class": cls,
+                    "_kind": "generic",
+                }
+            )
+        return records
 
-    return {"elliptic": records}
+    combined_path = data_dir / "wallets_features_classes_combined.csv"
+    if combined_path.exists():
+        log(f"Loading Elliptic++ combined wallet sample (fraction={sample_fraction}) ...")
+        df = pl.read_csv(combined_path, infer_schema_length=1000)
+        id_col = _find_id_column(df.columns)
+        class_col = _find_class_column(df.columns)
+        if id_col and class_col:
+            labeled = df.filter(pl.col(class_col).is_in([1, 2]))
+            sample_n = max(1, int(labeled.height * sample_fraction))
+            sampled = labeled.sample(n=sample_n, seed=42)
+            records: list[dict[str, Any]] = []
+            for row in tqdm(sampled.to_dicts(), desc="Elliptic wallets", total=sample_n):
+                item_id = str(row.get(id_col) or "")
+                cls = int(row.get(class_col) or 3)
+                records.append(
+                    {
+                        "source_row_id": f"elliptic-wallet-{item_id}",
+                        "person_name": f"elliptic_wallet_{item_id}",
+                        "address": f"wallet_{item_id}",
+                        "national_id": f"elliptic_wallet_{item_id}",
+                        "elliptic_id": item_id,
+                        "elliptic_class": cls,
+                        "_kind": "generic",
+                    }
+                )
+            return {"elliptic": records}
+
+    records = _load_from_features_classes(data_dir / "wallets_features.csv", data_dir / "wallets_classes.csv", "wallet")
+    if records is not None:
+        return {"elliptic": records}
+
+    records = _load_from_features_classes(data_dir / "txs_features.csv", data_dir / "txs_classes.csv", "tx")
+    if records is not None:
+        return {"elliptic": records}
+
+    log("WARNING: Elliptic++ data not found in expected layout; skipping.")
+    return {}
 
 
 def load_ibm_aml(
