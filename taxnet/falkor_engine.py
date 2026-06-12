@@ -134,6 +134,16 @@ def load_graph(
                 {"entity_id": entity_id, "phid": phid, "number": phone_norm},
             )
 
+        national_id = str(record.get("national_id") or "")
+        if national_id:
+            nid = f"NID:{national_id}"
+            graph.query(
+                "MATCH (p:Person {entity_id: $entity_id}) "
+                "MERGE (n:NationalId {id: $nid}) SET n.prefix = $prefix "
+                "MERGE (p)-[:USES_NATIONAL_ID {confidence: 1.0}]->(n)",
+                {"entity_id": entity_id, "nid": nid, "prefix": national_id[:5]},
+            )
+
     graph.query(
         "MATCH (p1:Person)-[:USES_ADDRESS]->(a:Address)<-[:USES_ADDRESS]-(p2:Person) "
         "WHERE p1 <> p2 "
@@ -143,6 +153,11 @@ def load_graph(
         "MATCH (p1:Person)-[:USES_PHONE]->(ph:PhoneNumber)<-[:USES_PHONE]-(p2:Person) "
         "WHERE p1 <> p2 "
         "MERGE (p1)-[:SHARES_PHONE_WITH {confidence: 0.95}]->(p2)"
+    )
+    graph.query(
+        "MATCH (p1:Person)-[:USES_NATIONAL_ID]->(n:NationalId)<-[:USES_NATIONAL_ID]-(p2:Person) "
+        "WHERE p1 <> p2 "
+        "MERGE (p1)-[:SHARES_NATIONAL_ID_WITH {confidence: 1.0}]->(p2)"
     )
 
     node_result = graph.query("MATCH (n) RETURN count(n) AS c")
@@ -179,9 +194,7 @@ def run_pagerank(graph_name: str) -> dict[str, float]:
     db = get_falkordb_client()
     graph = db.select_graph(graph_name)
     try:
-        result = graph.query(
-            "CALL pagerank() YIELD node, score RETURN node.entity_id AS entity_id, score"
-        )
+        result = graph.query("CALL pagerank() YIELD node, score RETURN node.entity_id AS entity_id, score")
         rows = _extract_rows(result)
         return {row["entity_id"]: float(row["score"]) for row in rows if row.get("entity_id")}
     except Exception:
@@ -193,8 +206,7 @@ def run_communities(graph_name: str) -> dict[str, int]:
     graph = db.select_graph(graph_name)
     try:
         result = graph.query(
-            "CALL weakly_connected_components() YIELD node, componentId "
-            "RETURN node.entity_id AS entity_id, componentId"
+            "CALL weakly_connected_components() YIELD node, componentId RETURN node.entity_id AS entity_id, componentId"
         )
         rows = _extract_rows(result)
         return {row["entity_id"]: int(row["componentId"]) for row in rows if row.get("entity_id")}
@@ -206,10 +218,7 @@ def run_degrees(graph_name: str) -> dict[str, int]:
     db = get_falkordb_client()
     graph = db.select_graph(graph_name)
     try:
-        result = graph.query(
-            "MATCH (p:Person)-[r]-(other) "
-            "RETURN p.entity_id AS entity_id, count(other) AS degree"
-        )
+        result = graph.query("MATCH (p:Person)-[r]-(other) RETURN p.entity_id AS entity_id, count(other) AS degree")
         rows = _extract_rows(result)
         return {row["entity_id"]: int(row["degree"]) for row in rows if row.get("entity_id")}
     except Exception:
@@ -221,7 +230,7 @@ def shortest_path(graph_name: str, source: str, target: str) -> list[dict[str, A
     graph = db.select_graph(graph_name)
     try:
         result = graph.query(
-            "MATCH path = shortestPath((src:Person {entity_id: $source})-[:SAME_ADDRESS_AS|SHARES_PHONE_WITH*]-(tgt:Person {entity_id: $target})) "
+            "MATCH path = shortestPath((src:Person {entity_id: $source})-[:SAME_ADDRESS_AS|SHARES_PHONE_WITH|SHARES_NATIONAL_ID_WITH*]-(tgt:Person {entity_id: $target})) "
             "RETURN [n in nodes(path) | n.entity_id] AS node_ids, length(path) AS hops",
             {"source": source, "target": target},
         )

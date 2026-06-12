@@ -6,7 +6,7 @@ import hashlib
 from collections import defaultdict
 from typing import Any
 
-from .normalization import normalize_address, normalize_phone
+from .normalization import normalize_address, normalize_national_id, normalize_phone
 
 
 def estimate_vehicle_value(engine_cc: float) -> float:
@@ -46,7 +46,9 @@ def build_graph(records: list[dict[str, Any]], resolution: dict[str, Any]) -> di
         if node_id not in nodes:
             nodes[node_id] = {"id": node_id, "type": node_type, "label": label, "meta": meta or {}}
 
-    def add_edge(source: str, target: str, relation: str, confidence: float = 1.0, evidence: dict[str, Any] | None = None) -> None:
+    def add_edge(
+        source: str, target: str, relation: str, confidence: float = 1.0, evidence: dict[str, Any] | None = None
+    ) -> None:
         edges.append(
             {
                 "source": source,
@@ -59,6 +61,7 @@ def build_graph(records: list[dict[str, Any]], resolution: dict[str, Any]) -> di
 
     address_to_entities: dict[str, set[str]] = defaultdict(set)
     phone_to_entities: dict[str, set[str]] = defaultdict(set)
+    national_id_to_entities: dict[str, set[str]] = defaultdict(set)
 
     for record in records:
         source_ref = f"{record['source_dataset']}:{record['source_row_id']}"
@@ -75,16 +78,35 @@ def build_graph(records: list[dict[str, Any]], resolution: dict[str, Any]) -> di
         address_norm = normalize_address(record.get("address", ""))
         if address_norm:
             address_id = stable_id("ADDR", address_norm)
-            add_node(address_id, "Address", record.get("address", ""), {"normalized": address_norm, "stable_key": address_norm})
+            add_node(
+                address_id,
+                "Address",
+                record.get("address", ""),
+                {"normalized": address_norm, "stable_key": address_norm},
+            )
             add_edge(entity_id, address_id, "USES_ADDRESS", 0.8, evidence)
             address_to_entities[address_norm].add(entity_id)
 
         phone_norm = normalize_phone(record.get("phone", ""))
         if phone_norm:
             phone_id = stable_id("PHONE", phone_norm)
-            add_node(phone_id, "PhoneNumber", f"***{phone_norm[-4:]}", {"normalized": phone_norm, "suffix": phone_norm[-4:]})
+            add_node(
+                phone_id, "PhoneNumber", f"***{phone_norm[-4:]}", {"normalized": phone_norm, "suffix": phone_norm[-4:]}
+            )
             add_edge(entity_id, phone_id, "USES_PHONE", 0.95, evidence)
             phone_to_entities[phone_norm].add(entity_id)
+
+        national_id = normalize_national_id(record.get("national_id", ""))
+        if national_id:
+            national_id_id = stable_id("NID", national_id)
+            add_node(
+                national_id_id,
+                "NationalId",
+                f"ID-{national_id[:5]}",
+                {"normalized": national_id, "prefix": national_id[:5]},
+            )
+            add_edge(entity_id, national_id_id, "USES_NATIONAL_ID", 1.0, evidence)
+            national_id_to_entities[national_id].add(entity_id)
 
         if record["record_type"] == "tax":
             node_id = f"TAX-{source_ref}"
@@ -109,7 +131,10 @@ def build_graph(records: list[dict[str, Any]], resolution: dict[str, Any]) -> di
             add_edge(entity_id, node_id, "BOUGHT_PROPERTY", 0.9, evidence)
         elif record["record_type"] == "offshore_entity":
             entity_name = str(record.get("offshore_entity_name") or "Offshore Entity").strip()
-            node_id = stable_id("OFFSHORE", f"{entity_name}:{record.get('offshore_jurisdiction') or ''}:{record.get('offshore_source') or ''}")
+            node_id = stable_id(
+                "OFFSHORE",
+                f"{entity_name}:{record.get('offshore_jurisdiction') or ''}:{record.get('offshore_source') or ''}",
+            )
             label = entity_name
             add_node(node_id, "OffshoreEntity", label, record)
             add_edge(entity_id, node_id, "LINKED_TO_OFFSHORE_ENTITY", 0.95, evidence)
@@ -127,6 +152,13 @@ def build_graph(records: list[dict[str, Any]], resolution: dict[str, Any]) -> di
             for right in sorted_ids[idx + 1 :]:
                 add_edge(left, right, "SHARES_PHONE_WITH", 0.95, {"phone_suffix": phone[-4:]})
                 add_edge(right, left, "SHARES_PHONE_WITH", 0.95, {"phone_suffix": phone[-4:]})
+
+    for national_id, entity_ids in national_id_to_entities.items():
+        sorted_ids = sorted(entity_ids)
+        for idx, left in enumerate(sorted_ids):
+            for right in sorted_ids[idx + 1 :]:
+                add_edge(left, right, "SHARES_NATIONAL_ID_WITH", 1.0, {"national_id_prefix": national_id[:5]})
+                add_edge(right, left, "SHARES_NATIONAL_ID_WITH", 1.0, {"national_id_prefix": national_id[:5]})
 
     return {
         "nodes": list(nodes.values()),

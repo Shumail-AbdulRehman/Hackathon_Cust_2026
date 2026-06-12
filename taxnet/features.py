@@ -34,7 +34,7 @@ def build_entity_features(
     # In-memory neighbor analysis
     neighbor_links: dict[str, list[dict[str, Any]]] = defaultdict(list)
     for edge in graph.get("edges", []):
-        if edge["relation"] in {"SAME_ADDRESS_AS", "SHARES_PHONE_WITH"}:
+        if edge["relation"] in {"SAME_ADDRESS_AS", "SHARES_PHONE_WITH", "SHARES_NATIONAL_ID_WITH"}:
             neighbor_links[edge["source"]].append(edge)
 
     for entity_id, records in entity_records.items():
@@ -107,6 +107,7 @@ def build_entity_features(
         links = neighbor_links.get(entity_id, [])
         shared_address = sum(1 for e in links if e["relation"] == "SAME_ADDRESS_AS")
         shared_phone = sum(1 for e in links if e["relation"] == "SHARES_PHONE_WITH")
+        shared_national_id = sum(1 for e in links if e["relation"] == "SHARES_NATIONAL_ID_WITH")
 
         community_id = communities.get(entity_id)
         community_size = sum(1 for c in communities.values() if c == community_id) if community_id is not None else 0
@@ -124,6 +125,7 @@ def build_entity_features(
             "is_filer": float(is_filer),
             "shared_address_count": float(shared_address),
             "shared_phone_count": float(shared_phone),
+            "shared_national_id_count": float(shared_national_id),
             "pagerank_score": float(pagerank.get(entity_id, 0.0)),
             "community_size": float(community_size),
             "degree_centrality": float(degrees.get(entity_id, 0)),

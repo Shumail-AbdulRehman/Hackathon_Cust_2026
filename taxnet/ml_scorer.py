@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import os
 from typing import Any
 
 import numpy as np
@@ -54,6 +53,13 @@ FEATURE_COLUMNS = [
     "asset_burst_detected",
     "asset_burst_window_value",
     "asset_burst_window_event_count",
+    "shared_national_id_count",
+    "max_asset_to_income_ratio",
+    "unreported_asset_years",
+    "asset_burst_count",
+    "total_unexplained_value",
+    "district_known",
+    "district_risk_score",
 ]
 
 

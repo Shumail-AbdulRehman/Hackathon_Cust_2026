@@ -9,6 +9,12 @@ from .graph_engine import estimate_vehicle_value
 
 UNKNOWN_INCOME_BASELINE = 150_000
 
+ASSOCIATE_LINK_WEIGHTS = {
+    "SHARES_NATIONAL_ID_WITH": 1.6,
+    "SHARES_PHONE_WITH": 0.6,
+    "SAME_ADDRESS_AS": 0.35,
+}
+
 
 def clamp(value: float, low: float = 0.0, high: float = 100.0) -> float:
     return max(low, min(high, value))
@@ -197,7 +203,7 @@ def score_entities(
 
     neighbor_links: dict[str, list[dict[str, Any]]] = defaultdict(list)
     for edge in graph["edges"]:
-        if edge["relation"] in {"SAME_ADDRESS_AS", "SHARES_PHONE_WITH"}:
+        if edge["relation"] in {"SAME_ADDRESS_AS", "SHARES_PHONE_WITH", "SHARES_NATIONAL_ID_WITH"}:
             neighbor_links[edge["source"]].append(edge)
 
     possible_matches_by_entity = possible_matches_for_entities(resolution)
@@ -236,8 +242,10 @@ def score_entities(
             neighbor_assets = neighbor_agg["estimated_vehicle_value"] + neighbor_agg["estimated_property_value"]
             if neighbor_assets <= 0:
                 continue
-            strongest_link = max(strongest_link, float(link["confidence"]))
-            associate_asset_value += neighbor_assets * float(link["confidence"])
+            weight = ASSOCIATE_LINK_WEIGHTS.get(link["relation"], 0.5)
+            effective_confidence = float(link["confidence"]) * weight
+            strongest_link = max(strongest_link, effective_confidence)
+            associate_asset_value += neighbor_assets * effective_confidence
             neighbor_name = entity_lookup.get(neighbor_id, {}).get("canonical_name", neighbor_id)
             associate_reasons.append(
                 f"{link['relation'].lower()} {neighbor_name}, linked assets PKR {neighbor_assets:,.0f}"
