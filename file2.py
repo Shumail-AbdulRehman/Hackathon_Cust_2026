@@ -212,8 +212,9 @@ def load_uk_companies_house(data_dir: Path, sample_fraction: float = 0.05) -> di
                 z.extract(json_name, data_dir)
                 (data_dir / json_name).replace(psc_jsonl)
 
-    # Read a sample of active companies.
-    basic_df = pl.read_csv(basic_csv, infer_schema_length=1000, null_values=["", "NULL", "N/A"])
+    # Read a sample of active companies. Use infer_schema_length=0 to keep all
+    # columns as strings and avoid mixed-type parsing errors (e.g. POBox numbers).
+    basic_df = pl.read_csv(basic_csv, infer_schema_length=0, null_values=["", "NULL", "N/A"])
     if "CompanyStatus" in basic_df.columns:
         basic_df = basic_df.filter(pl.col("CompanyStatus").str.to_lowercase() == "active")
     company_cols = [c for c in basic_df.columns if "CompanyName" in c or "CompanyNumber" in c]
@@ -378,7 +379,7 @@ def load_ibm_aml(
         return {}
 
     log(f"Loading IBM AML sample (sample_size={sample_size}) from {csv_path} ...")
-    df = pl.read_csv(csv_path, infer_schema_length=1000, null_values=["", "NULL", "N/A"])
+    df = pl.read_csv(csv_path, infer_schema_length=0, null_values=["", "NULL", "N/A"])
 
     # Determine label column.
     label_col = None
