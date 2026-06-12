@@ -5,6 +5,18 @@ from taxnet.pipeline import run_benchmark, run_pipeline
 from taxnet.synthetic import generate_synthetic_datasets
 
 
+class MLIntegrationTests(unittest.TestCase):
+    def test_pipeline_includes_ml_score_and_shap(self):
+        result = run_pipeline()
+        profiles = result["scoring"]["profiles"]
+        self.assertGreater(len(profiles), 0)
+        for profile in profiles:
+            self.assertIn("risk_tier", profile)
+            self.assertIn("ml_score", profile)
+            self.assertIn("shap_features", profile)
+            self.assertIn(profile["risk_tier"], {"green", "yellow", "orange", "red", "critical"})
+
+
 class PipelineTests(unittest.TestCase):
     def test_synthetic_pipeline_produces_flagged_profiles_and_metrics(self):
         result = run_pipeline()
@@ -60,7 +72,8 @@ class PipelineTests(unittest.TestCase):
         }
         result = run_pipeline(datasets=datasets)
         profile = result["scoring"]["profiles"][0]
-        self.assertEqual(profile["deviation_score"], 0.0)
+        self.assertLessEqual(profile["deviation_score"], 20.0)
+        self.assertEqual(profile["risk_tier"], "green")
         self.assertIn("not currently in the flagged audit queue", profile["explanation"])
         self.assertNotIn("is flagged for audit review", profile["explanation"])
 

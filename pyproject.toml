@@ -1,0 +1,22 @@
+[project]
+name = "taxnet"
+version = "0.2.0"
+description = "TaxNet XAI — Pakistan-first tax fraud detection prototype"
+requires-python = ">=3.11"
+dependencies = [
+    "numpy>=1.26",
+    "pandas>=2.0",
+    "scikit-learn>=1.4",
+    "xgboost-cpu>=2.0",
+    "shap>=0.45",
+    "falkordb>=1.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0",
+    "ruff>=0.4",
+]
+
+[tool.ruff]
+line-length = 120

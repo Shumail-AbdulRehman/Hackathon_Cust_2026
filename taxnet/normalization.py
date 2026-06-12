@@ -186,6 +186,23 @@ def normalize_phone(value: object) -> str:
     return digits[-11:] if len(digits) >= 11 else digits
 
 
+def normalize_national_id(value: object) -> str:
+    """Normalize Pakistani CNIC/NTN to a clean digit string.
+
+    CNIC: 13 digits (XXXXX-XXXXXXX-X).
+    NTN: 7 digits.
+    Returns empty string if it does not look like either.
+    """
+    if value is None:
+        return ""
+    digits = re.sub(r"\D", "", str(value))
+    if len(digits) == 13:
+        return digits
+    if len(digits) == 7:
+        return digits
+    return ""
+
+
 def token_set(text: str) -> set[str]:
     return {token for token in normalize_name_tokens(text) if token}
 

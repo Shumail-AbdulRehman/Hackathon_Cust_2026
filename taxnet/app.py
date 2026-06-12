@@ -51,10 +51,27 @@ class TaxNetHandler(BaseHTTPRequestHandler):
         self.end_headers()
         self.wfile.write(body)
 
+def falkor_health() -> dict[str, Any]:
+    try:
+        from .falkor_engine import get_falkordb_client
+
+        client = get_falkordb_client()
+        client.connection.ping()
+        return {"ok": True}
+    except Exception as exc:
+        return {"ok": False, "error": str(exc)}
+
+
+class TaxNetHandler(BaseHTTPRequestHandler):
+    server_version = "TaxNetXAI/0.1"
+
+    def log_message(self, format: str, *args: Any) -> None:
+        return
+
     def do_GET(self) -> None:
         parsed = urlparse(self.path)
         if parsed.path == "/api/health":
-            self.send_json({"ok": True, "service": "taxnet-xai"})
+            self.send_json({"ok": True, "service": "taxnet-xai", "falkordb": falkor_health()})
             return
         if parsed.path == "/api/demo":
             result = compact_result(run_pipeline())

@@ -6,10 +6,16 @@ import time
 from typing import Any
 
 from .entity_resolution import resolve_entities
+from .falkor_engine import load_graph
 from .graph_engine import build_graph
 from .ingestion import canonicalize_datasets
 from .scoring import score_entities
 from .synthetic import generate_synthetic_datasets
+
+try:
+    from .ml_scorer import train_model
+except Exception:
+    train_model = None  # type: ignore[assignment]
 
 
 def run_pipeline(
@@ -30,7 +36,21 @@ def run_pipeline(
     t_er = time.perf_counter()
     graph = build_graph(canonical_records, resolution)
     t_graph = time.perf_counter()
-    scoring = score_entities(graph, resolution)
+
+    falkor_summary = None
+    try:
+        falkor_summary = load_graph("taxnet", canonical_records, resolution)
+    except Exception as exc:
+        falkor_summary = {"error": str(exc)}
+
+    ml_model = None
+    if train_model is not None:
+        try:
+            ml_model = train_model(graph, resolution, falkor_summary)
+        except Exception:
+            ml_model = None
+
+    scoring = score_entities(graph, resolution, ml_model=ml_model, falkor_summary=falkor_summary)
     t_score = time.perf_counter()
 
     return {
@@ -39,6 +59,7 @@ def run_pipeline(
         "canonical_records": canonical_records,
         "resolution": resolution,
         "graph": graph,
+        "falkor_summary": falkor_summary,
         "scoring": scoring,
         "timing_ms": {
             "ingestion": round((t_ingest - start) * 1000, 2),

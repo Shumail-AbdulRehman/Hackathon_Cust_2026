@@ -14,6 +14,22 @@ def clamp(value: float, low: float = 0.0, high: float = 100.0) -> float:
     return max(low, min(high, value))
 
 
+def tier_from_score(score: float) -> str:
+    if score <= 20:
+        return "green"
+    if score <= 40:
+        return "yellow"
+    if score <= 60:
+        return "orange"
+    if score <= 80:
+        return "red"
+    return "critical"
+
+
+# Alias used by ml_scorer and tests.
+risk_tier = tier_from_score
+
+
 def aggregate_entity(records: list[dict[str, Any]]) -> dict[str, Any]:
     tax_records = [r for r in records if r["record_type"] == "tax"]
     income_values = [r.get("declared_income", 0) for r in tax_records if r.get("declared_income", 0) > 0]
@@ -108,10 +124,26 @@ def direct_score(agg: dict[str, Any]) -> tuple[float, dict[str, float], list[str
     return score, components, reasons, uncertainty_flags
 
 
-def score_entities(graph: dict[str, Any], resolution: dict[str, Any]) -> dict[str, Any]:
+def score_entities(
+    graph: dict[str, Any],
+    resolution: dict[str, Any],
+    ml_model: Any | None = None,
+    falkor_summary: dict[str, Any] | None = None,
+) -> dict[str, Any]:
     entity_records = graph["entity_records"]
     entity_lookup = {entity["entity_id"]: entity for entity in resolution["entities"]}
     aggregates = {entity_id: aggregate_entity(records) for entity_id, records in entity_records.items()}
+
+    ml_scores: dict[str, float] = {}
+    shap_data: dict[str, Any] | None = None
+    if ml_model is not None:
+        from .ml_scorer import explain_with_shap, score_with_model
+
+        ml_scores = {
+            eid: data["deviation_score"]
+            for eid, data in score_with_model(ml_model, graph, resolution, falkor_summary).items()
+        }
+        shap_data = explain_with_shap(ml_model, graph, resolution, falkor_summary)
 
     neighbor_links: dict[str, list[dict[str, Any]]] = defaultdict(list)
     for edge in graph["edges"]:
@@ -164,7 +196,13 @@ def score_entities(graph: dict[str, Any], resolution: dict[str, Any]) -> dict[st
         income = float(agg["effective_monthly_income_for_scoring"])
         associate_ratio = associate_asset_value / max(income * 120, 3_000_000)
         associate_score = clamp((associate_ratio - 1.0) * 24 + strongest_link * 18, 0, 100)
-        final_score = clamp(max(direct, direct * 0.65 + associate_score * 0.55))
+        rule_score = clamp(max(direct, direct * 0.65 + associate_score * 0.55))
+
+        ml_score = ml_scores.get(entity_id)
+        if ml_score is not None:
+            final_score = clamp(0.6 * rule_score + 0.4 * ml_score)
+        else:
+            final_score = rule_score
 
         if final_score >= 75:
             level = "high"
@@ -172,6 +210,7 @@ def score_entities(graph: dict[str, Any], resolution: dict[str, Any]) -> dict[st
             level = "medium"
         else:
             level = "low"
+        tier = tier_from_score(final_score)
 
         source_rows = []
         for record in agg["records"]:
@@ -213,9 +252,13 @@ def score_entities(graph: dict[str, Any], resolution: dict[str, Any]) -> dict[st
                 "entity_id": entity_id,
                 "name": entity.get("canonical_name", entity_id),
                 "risk_level": level,
+                "risk_tier": tier,
                 "deviation_score": round(final_score, 1),
                 "direct_score": round(direct, 1),
                 "associate_proxy_score": round(associate_score, 1),
+                "ml_score": round(ml_score, 1) if ml_score is not None else None,
+                "shap_base_value": shap_data["base_value"] if shap_data else None,
+                "shap_features": shap_data["explanations"].get(entity_id, [])[:8] if shap_data else [],
                 "risk_basis": risk_basis,
                 "scoring_confidence": round(scoring_confidence, 1),
                 "evidence_coverage": round(evidence_coverage, 1),
