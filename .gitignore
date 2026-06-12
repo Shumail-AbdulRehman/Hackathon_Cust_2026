@@ -32,6 +32,7 @@ htmlcov/
 *.sqlite3
 demo_icij_report.json
 demo_backend_report.json
+demo_cust_csv_report.json
 benchmark_suite_results.json
 *.report.json
 
