@@ -15,11 +15,6 @@ import polars as pl
 from taxnet.normalization import normalize_name
 
 
-def sanitize_name(value: object) -> str:
-    """Normalize a raw name into a canonical lower-cased form."""
-    return normalize_name(value)
-
-
 def _split(value: object) -> list[str]:
     """Split a semicolon-delimited string into stripped, non-empty parts."""
     if value is None:
@@ -45,21 +40,23 @@ def load_targets(path: Path | str) -> list[dict[str, Any]]:
     targets: list[dict[str, Any]] = []
     for row in df.to_dicts():
         raw_name = str(row.get("name") or "").strip()
-        canonical_name = sanitize_name(raw_name)
+        canonical_name = normalize_name(raw_name)
         if not canonical_name:
             continue
 
         raw_aliases = _split(row.get("aliases"))
-        aliases = [
-            alias for alias in (sanitize_name(alias) for alias in raw_aliases) if alias and alias != canonical_name
-        ]
+        aliases = list(
+            dict.fromkeys(
+                alias for alias in (normalize_name(alias) for alias in raw_aliases) if alias and alias != canonical_name
+            )
+        )
 
         countries = [country.upper() for country in _split(row.get("countries"))]
 
         targets.append(
             {
-                "id": row.get("id"),
-                "schema": row.get("schema"),
+                "id": str(row.get("id") or ""),
+                "schema": str(row.get("schema") or ""),
                 "name": canonical_name,
                 "aliases": aliases,
                 "countries": countries,
