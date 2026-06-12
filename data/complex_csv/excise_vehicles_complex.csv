@@ -1,0 +1,17 @@
+vehicle_reg_no,owner_name,engine_capacity_cc,vehicle_make_model,registration_year,owner_address,owner_phone,chassis_no,source_note
+LEA-9001,Mohd Ahmed Khan,3000,Toyota Land Cruiser ZX,2024,House 21 St 4 DHA Phase 5 Lahore,03001234567,CH-CX-9001,direct luxury same person
+LEA-9002,Household Khan,2800,Audi Q7,2023,House 21 Street 4 DHA Phase 5 Lahore,,CH-CX-9002,shared address possible proxy
+KHI-8801,Noman Raza,2998,BMW X7,2024,Bungalow 18 Khayaban e Ittehad DHA Karachi,03124567890,CH-CX-8801,proxy asset
+KHI-8802,Sana Ali,3000,Mercedes S400,2023,Bunglow 18 Kh Ittehad Defence Karachi,,CH-CX-8802,proxy asset address variant
+ISB-1201,Sara Malik,1300,Honda City,2021,House 7 Street 16 F-10 Islamabad,03331234567,CH-CX-1201,normal asset
+RWP-7744,Tariq Usman,3000,Toyota Land Cruiser ZX,2024,Flat 4 Block C Bahria Town Rawalpindi,03451230001,CH-CX-7744,relative/proxy asset
+FSD-2210,Nadia Hussain,1000,Suzuki Cultus,2019,H 80 Jinnah Col Faisalabad,03219876543,CH-CX-2210,small vehicle
+MUL-4412,Bilal Mahmood,1300,Toyota Corolla,2020,House 9 Gulgasht Colony Multan,03015550991,CH-CX-4412,normal vehicle
+PEW-7781,Hira Noor,660,Suzuki Alto,2018,House 42 University Rd Peshawar,03445559000,CH-CX-7781,normal vehicle
+QTA-3311,K. Ali,3000,Audi Q7,2024,H 11 Zarghoon Rd Quetta,03335557891,CH-CX-3311,direct luxury low tax
+LEA-3312,Iqbal Ahmed,3000,Mercedes S400,2024,House 33 Model Town Lahore,03008881234,CH-CX-3312,proxy for zara
+KHI-1515,Asif Khan,1800,Honda Civic,2022,Flat 15 Clifton Blk 5 Karachi,03117770123,CH-CX-1515,upper normal
+ISB-6060,Farhan Qureshi,2800,Toyota Prado,2024,House 12 G-11 Islamabad,03336660001,CH-CX-6060,zero income luxury
+LHR-9100,Ayesha Siddiqui,1300,Honda City,2021,H 91 Johar Town Lahore,03224440002,CH-CX-9100,normal
+LHR-9101,Ayesha S.,660,Suzuki Alto,2017,House 91 Johar Twn Lahore,,CH-CX-9101,name abbreviation
+KHI-7777,Ali R. Sheikh,1000,Suzuki Cultus,2020,Bungalow 18 DHA Karachi,03124567890,CH-CX-7777,small direct asset
