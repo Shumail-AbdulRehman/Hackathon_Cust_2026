@@ -25,6 +25,26 @@ dev = [
     "pytest>=8.0",
     "ruff>=0.4",
 ]
+server = [
+    # File 1: law download + vectorless RAG index
+    "pymupdf4llm>=0.1",
+    "sentence-transformers>=3.0",
+    "faiss-cpu>=1.8",
+    "tqdm>=4.66",
+    "requests>=2.31",
+    # File 2: large dataset download + ML training
+    "kaggle>=1.6",
+    "huggingface_hub>=0.23",
+    "datasets>=2.19",
+    # File 3: SLM fine-tuning + GGUF export
+    # torch must be installed separately with the correct CUDA wheel for the server GPU.
+    "unsloth>=2024.12",
+    "transformers>=4.41",
+    "trl>=0.9",
+    "peft>=0.11",
+    "accelerate>=0.30",
+    "bitsandbytes>=0.43",
+]
 
 [tool.setuptools]
 packages = ["taxnet"]

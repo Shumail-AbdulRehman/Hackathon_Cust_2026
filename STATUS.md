@@ -1,6 +1,6 @@
 # TaxNet XAI — Implementation Status & Data Audit
 
-Last updated: 2026-06-12
+Last updated: 2026-06-12 (server pipeline + backend features sprint in progress)
 
 ---
 
@@ -40,25 +40,46 @@ Last updated: 2026-06-12
 
 | Area | Status | Reason |
 |------|--------|--------|
-| SLM/LLM audit narrative | ⏸️ On hold | User requested to pause; will revisit if time permits or after UI redesign |
-| GNN anomaly detection | ⏸️ On hold | User requested to pause; A500 48GB GPU reserved for this if re-enabled |
+| GNN anomaly detection | ⏸️ On hold | User chose ML + SLM for the server run; GNN may be added later if time permits |
 | UI/UX redesign | ⏸️ On hold | User will use the `impeccable` skill later; backend-only changes for now |
+
+## 2.5 Server-side Model Training Pipeline (in progress)
+
+A three-file server pipeline is being implemented to train models on real data and export CPU-runnable artifacts.
+
+| File | Purpose | Outputs |
+|------|---------|---------|
+| `file1.py` | Download Pakistan tax laws + build a vectorless RAG index | `server_artifacts/law_rag/law_index.faiss`, `law_chunks.jsonl`, `law_metadata.jsonl` |
+| `file2.py` | Download ICIJ/OpenSanctions/UK/Elliptic/IBM datasets, build entity graph, train XGBoost ML model | `server_artifacts/ml/ml_model.json`, `feature_columns.json`, `entity_profiles.jsonl`, `training_report.json` |
+| `file3.py` | Download Qwen + SmolLM2-135M, generate SLM training data from entity profiles, fine-tune, export GGUF | `server_artifacts/slm/gguf/*.gguf` |
+
+All three files are idempotent and use `server_utils.py` for resume/retry-safe downloads and checkpoints.
+
+## 2.6 Backend Features 1–4 (in progress)
+
+These gaps from the original audit are being implemented in parallel with the server pipeline:
+
+| # | Feature | Status | Notes |
+|---|---------|--------|-------|
+| 1 | OpenSanctions loader / watchlist screening | 🚧 In progress | Used by `file2.py` for ML labels; will also surface matches in scoring |
+| 2 | Income–event alignment | 🚧 In progress | New module + features correlating asset dates with tax filing years |
+| 3 | Direct `cust-csv/` demo | 🚧 In progress | New `scripts/demo_cust_csv.py` to run local Pakistan CSVs through the pipeline |
+| 4 | District-level risk features | 🚧 In progress | Expand `taxnet/nic_geocode.py` mapping + add district risk score feature |
 
 ---
 
 ## 3. Not Implemented
 
-These were discussed but are **not currently in the codebase**. They are candidates for next 48-hour sprint or post-hackathon work.
+These were discussed but are **not currently in the codebase** and remain out of scope for the current sprint.
 
 | Area | Priority | Notes |
 |------|----------|-------|
 | Dataset-level Benford dashboard | Medium | Aggregate first-digit deviation across whole datasets, not just per entity |
-| Income-event alignment | High | Correlate property/vehicle dates with tax filing periods to detect unreported income timing |
-| District-level risk features | Medium | Enrich NIC geocoding with district-level socioeconomic or tax-gap data |
-| Watchlist screening (OpenSanctions) | High | Load `targets.simple.csv` and flag resolved entities that match sanctioned/PEP records |
 | Airflow / proper data-engineering pipeline | Low-Medium | Overkill for a 48-hour demo; SQLite-backed ingestion is sufficient for now |
 | PCA / dimensionality reduction | Low | Not needed for current feature set; XGBoost handles redundancy |
 | Real public datasets | High | Searched; no individual-level Pakistan tax/property/vehicle data was found. Macro data exists (see audit below) |
+
+**Moved to in-progress:** income-event alignment, district-level risk features, OpenSanctions watchlist screening, and ML retraining on real data are now covered by §2.5 and §2.6 above.
 
 ---
 
@@ -151,28 +172,28 @@ These four CSVs are the only Pakistan synthetic files that contain **entity-leve
 
 ---
 
-## 5. Recommendations for the next 48 hours
+## 5. Current 48-Hour Sprint Plan
 
-### 5.1 Highest-impact additions
+### 5.1 Server-side model training (priority)
 
-1. **Temporal graph features** — extend beyond asset bursts to income-event alignment (e.g., property transfer within N months of a tax filing).
-2. **Named LLI metric polish** — surface `lli_ratio` and `lli_score` in the HTTP API demo output and UI profile card.
-3. **CNIC/NIC geocoding** — extend district mapping beyond the current sample set; add district-level risk features if geo datasets become available.
-4. **Benford's Law** — move from per-entity to dataset-level Benford dashboard; aggregate MAD across all taxpayers per source.
-5. **Real-data ingestion mapping** — add a loader that can read `cust-csv/` directly and demonstrate it in the demo script.
-6. **OpenSanctions loader** — wire the second local real dataset into the pipeline for watchlist screening.
-7. **Tune ANN blocking** — benchmark ANN vs. traditional blocking on 1K–10K ICIJ samples and auto-enable ANN above a record-count threshold.
+1. Run `file1.py` on the A500 server to download Pakistan tax laws and build the vectorless RAG index.
+2. Run `file2.py` on the server to train the XGBoost ML model on ICIJ + OpenSanctions + sampled UK/Elliptic/IBM data.
+3. Run `file3.py` on the server to fine-tune SmolLM2-135M on entity-profile audit narratives and export a GGUF.
+4. SCP `server_artifacts/` back to the local machine for CPU inference.
 
-### 5.2 Demo / pitch polish
+### 5.2 Backend features 1–4 (parallel)
+
+1. **OpenSanctions loader** — finish `taxnet/loaders/open_sanctions_loader.py` and wire watchlist matches into scoring.
+2. **Income–event alignment** — add `taxnet/income_event_alignment.py` + features + scoring explanations.
+3. **`cust-csv/` demo** — add `scripts/demo_cust_csv.py` and README instructions.
+4. **District-level risk features** — expand `taxnet/nic_geocode.py` mapping and add district risk score.
+
+### 5.3 Demo / pitch polish
 
 - Show the `cust-csv/` dataset running through the live pipeline (not just synthetic data).
 - Highlight the macro tax-to-GDP context from `tax-data/` to justify the problem.
 - Keep the UI on hold until the `impeccable` redesign.
-
-### 5.3 If SLM/GNN come off hold
-
-- Use the A500 48GB GPU for GNN training on the FalkorDB graph.
-- Use a small local LLM (e.g., Qwen2.5-7B / Llama-3.1-8B) to generate natural-language audit narratives from SHAP attributions.
+- GNN remains on hold unless ML + SLM finish early.
 
 ---
 
