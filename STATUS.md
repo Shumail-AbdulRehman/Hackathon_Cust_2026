@@ -1,6 +1,6 @@
 # TaxNet XAI — Implementation Status & Data Audit
 
-Last updated: 2026-06-12 (server pipeline + backend features sprint in progress)
+Last updated: 2026-06-12 (server pipeline + backend features sprint complete)
 
 ---
 
@@ -27,7 +27,7 @@ Last updated: 2026-06-12 (server pipeline + backend features sprint in progress)
 | HTTP API | ✅ Done | `/api/health`, `/api/demo`, `/api/benchmark`, `/api/profile`, `/api/run` |
 | Demo / Benchmark scripts | ✅ Done | `scripts/demo_backend.py`, `scripts/benchmark_suite.py`, `scripts/demo_icij.py` |
 | ICIJ Offshore Leaks loader | ✅ Done | `taxnet/loaders/icij_loader.py` with Polars-based sampling |
-| Tests | ✅ Done | 50+/50+ passing (`tests/test_*.py`) |
+| Tests | ✅ Done | 92 passing (`tests/test_*.py`) |
 
 ### Performance snapshot
 
@@ -53,7 +53,7 @@ A three-file server pipeline is being implemented to train models on real data a
 | `file2.py` | Download ICIJ/OpenSanctions/UK/Elliptic/IBM datasets, build entity graph, train XGBoost ML model | `server_artifacts/ml/ml_model.json`, `feature_columns.json`, `entity_profiles.jsonl`, `training_report.json` |
 | `file3.py` | Download Qwen + SmolLM2-135M, generate SLM training data from entity profiles, fine-tune, export GGUF | `server_artifacts/slm/gguf/*.gguf` |
 
-All three files are idempotent and use `server_utils.py` for resume/retry-safe downloads and checkpoints.
+All three files are idempotent, lint-clean, and use `server_utils.py` for resume/retry-safe downloads and checkpoints. `file2.py` now runs OpenSanctions watchlist screening after entity resolution and stores matches in `entity_profiles.jsonl`.
 
 ## 2.6 Backend Features 1–4 (in progress)
 
@@ -61,10 +61,11 @@ These gaps from the original audit are being implemented in parallel with the se
 
 | # | Feature | Status | Notes |
 |---|---------|--------|-------|
-| 1 | OpenSanctions loader / watchlist screening | 🚧 In progress | Used by `file2.py` for ML labels; will also surface matches in scoring |
-| 2 | Income–event alignment | 🚧 In progress | New module + features correlating asset dates with tax filing years |
-| 3 | Direct `cust-csv/` demo | 🚧 In progress | New `scripts/demo_cust_csv.py` to run local Pakistan CSVs through the pipeline |
-| 4 | District-level risk features | 🚧 In progress | Expand `taxnet/nic_geocode.py` mapping + add district risk score feature |
+| 1 | OpenSanctions loader / watchlist screening | ✅ Done | Loader in `taxnet/loaders/open_sanctions_loader.py`; screening integrated into `file2.py` for server; local scoring deferred to avoid 458 MB load |
+| 2 | Income–event alignment | ✅ Done | `taxnet/income_event_alignment.py` + features + scoring explanations |
+| 3 | Direct `cust-csv/` demo | ✅ Done | `scripts/demo_cust_csv.py` runs local Pakistan CSVs end-to-end |
+| 4 | District-level risk features | ✅ Done | Expanded `taxnet/nic_geocode.py` district mapping + `district_risk_score` feature |
+| 5 | CNIC/NTN vs phone scoring weight | ✅ Done | `SHARES_NATIONAL_ID_WITH` edges weighted 1.6× vs 0.6× for phone sharing |
 
 ---
 
@@ -268,11 +269,14 @@ uv sync --extra dev
 uv pip install -e .
 uv run python scripts/setup_falkordb.py
 
-# Test suite (37 tests)
+# Test suite (92 tests)
 uv run pytest tests -q
 
 # End-to-end demo (synthetic Pakistan data)
 uv run python scripts/demo_backend.py
+
+# Pakistan-shaped CSV demo
+uv run python scripts/demo_cust_csv.py --no-server
 
 # ICIJ Offshore Leaks demo (real global tax-evasion data)
 # This demo uses ANN blocking and disables ML because the model is trained only on synthetic Pakistan data.
