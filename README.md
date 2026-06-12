@@ -35,11 +35,28 @@ uv run pytest tests -q
 # Run a small synthetic demo
 uv run python scripts/demo_backend.py
 
+# Build the React frontend
+npm install
+cd web && npm install && npm run build && cd ..
+
 # Run the HTTP server
 uv run python run.py
 ```
 
-Then open `http://127.0.0.1:8000/api/health` and `http://127.0.0.1:8000/api/demo`.
+Then open `http://127.0.0.1:8000/`.
+
+For frontend development with hot reload and API proxy:
+
+```bash
+# Terminal 1: start the Python API server
+uv run python run.py
+
+# Terminal 2: start the Vite dev server
+npm install
+cd web && npm run dev
+```
+
+Then open `http://127.0.0.1:5173/`.
 
 ---
 
@@ -101,7 +118,7 @@ data/
 ## Notes
 
 - **Data mix:** `cust-csv/` is synthetic Pakistan test data. `icij-offshore-leaks/` and `open-sanctions/` are real global datasets now integrated into the pipeline.
-- **UI is intentionally on hold.** The user will redesign it with the `impeccable` skill; backend-only changes are being made for now.
+- **Frontend is a React + Vite app.** Source lives in `web/src/` and builds to `web/dist/`, which the Python server serves.
 - **SLM (small LLM) narrative generation and GNN anomaly detection are on hold** per the user's request. The modules are not removed, just not wired into the pipeline.
 - **FalkorDB is optional.** The pipeline degrades gracefully if the container is not running; graph scoring continues with the in-memory graph.
 - **ANN blocking is optional.** Set `use_ann_blocking=True` in `run_pipeline` or `resolve_entities` to use BlockingPy/FAISS-HNSW instead of key-based blocking. Useful for large datasets; for small synthetic samples traditional blocking is faster.
@@ -128,6 +145,13 @@ uv run python scripts/demo_icij.py --max-entities 1000 --seed 42
 
 # Run a scalability benchmark
 uv run python run.py --benchmark --citizens 500 --seed 42
+
+# Build the React frontend for production
+npm install
+cd web && npm install && npm run build && cd ..
+
+# Run the full stack (backend + built frontend)
+uv run python run.py
 
 # Re-audit dataset headers/rows
 uv run python scripts/sample_data.py > docs/data_sample_report.txt

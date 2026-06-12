@@ -14,7 +14,7 @@ from .ingestion import profile_datasets
 from .pipeline import compact_result, run_benchmark, run_pipeline
 
 ROOT = Path(__file__).resolve().parents[1]
-WEB = ROOT / "web"
+WEB = ROOT / "web" / "dist"
 
 
 def bounded_int(value: Any, default: int, low: int, high: int) -> int:
