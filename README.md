@@ -41,6 +41,14 @@ uv run python run.py
 
 Then open `http://127.0.0.1:8000/api/health` and `http://127.0.0.1:8000/api/demo`.
 
+### Run on the Pakistan-shaped CSVs
+
+```bash
+uv run python scripts/demo_cust_csv.py --no-server
+```
+
+This loads the files in `data/cust-csv/`, runs the full pipeline, writes `demo_cust_csv_report.json`, and (without `--no-server`) starts the web dashboard.
+
 ---
 
 ## HTTP API
@@ -122,6 +130,9 @@ uv run pytest tests -q
 
 # Run the synthetic demo
 uv run python scripts/demo_backend.py
+
+# Run the Pakistan-shaped CSV demo
+uv run python scripts/demo_cust_csv.py --no-server
 
 # Run the ICIJ Offshore Leaks demo (real global tax-evasion data)
 uv run python scripts/demo_icij.py --max-entities 1000 --seed 42
