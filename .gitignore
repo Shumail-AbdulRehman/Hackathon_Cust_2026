@@ -1,0 +1,55 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+.venv/
+venv/
+ENV/
+env/
+*.egg-info/
+dist/
+build/
+
+# Testing / coverage
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# Generated reports and databases
+*.duckdb
+*.db
+*.sqlite
+*.sqlite3
+demo_icij_report.json
+demo_backend_report.json
+benchmark_suite_results.json
+*.report.json
+
+# Large external datasets
+data/open-sanctions/
+data/icij-offshore-leaks/
+data/pakistani-tax-data/*.xlsx
+data/pakistani-tax-data/API_*/
+
+# Keep small sample CSVs in data/cust-csv
+# Logs
+*.log
+logs/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Temporary files
+/tmp/
+*.tmp
