@@ -1,0 +1,1236 @@
+
+============================================================
+CSV: data/cust-csv/disco_consumption_complex.csv
+============================================================
+Headers: ['meter_ref_no', 'consumer_name', 'installation_address', 'avg_monthly_bill_pkr', 'connection_type', 'phone_number', 'division', 'source_note']
+Row 1: ['LESCO-CX-0001', 'M. Ahmed Khan', 'H 21 St 4 DHA Ph 5 Lahore', '310000', 'Residential', '03001234567', 'Lahore', 'direct high utility']
+Row 2: ['LESCO-CX-0002', 'Household Khan', 'House 21 Street 4 DHA Phase 5 Lahore', '220000', 'Residential', '', 'Lahore', 'household high utility']
+Row 3: ['K-ELEC-CX-0003', 'Ali Raza Sheikh', 'Bungalow 18 Khayaban-e-Ittehad DHA Karachi', '240000', 'Residential', '03124567890', 'Karachi', 'proxy household high utility']
+
+============================================================
+CSV: data/cust-csv/excise_vehicles_complex.csv
+============================================================
+Headers: ['vehicle_reg_no', 'owner_name', 'engine_capacity_cc', 'vehicle_make_model', 'registration_year', 'owner_address', 'owner_phone', 'chassis_no', 'source_note']
+Row 1: ['LEA-9001', 'Mohd Ahmed Khan', '3000', 'Toyota Land Cruiser ZX', '2024', 'House 21 St 4 DHA Phase 5 Lahore', '03001234567', 'CH-CX-9001', 'direct luxury same person']
+Row 2: ['LEA-9002', 'Household Khan', '2800', 'Audi Q7', '2023', 'House 21 Street 4 DHA Phase 5 Lahore', '', 'CH-CX-9002', 'shared address possible proxy']
+Row 3: ['KHI-8801', 'Noman Raza', '2998', 'BMW X7', '2024', 'Bungalow 18 Khayaban e Ittehad DHA Karachi', '03124567890', 'CH-CX-8801', 'proxy asset']
+
+============================================================
+CSV: data/cust-csv/fbr_tax_records_complex.csv
+============================================================
+Headers: ['fbr_id', 'full_name', 'declared_income_pkr', 'tax_paid_pkr', 'filer_status', 'reported_address', 'phone_number', 'ntn', 'source_note']
+Row 1: ['FBR-CX-0001', 'Muhammad Ahmed Khan', '85000', '0', 'Filer', 'H.21 St 4 DHA Ph 5 Lahore', '+92 300 1234567', 'NTN-10001', 'direct luxury mismatch']
+Row 2: ['FBR-CX-0002', 'M. Ahmed Khan', '85000', '0', 'Filer', 'House 21 Street 4 DHA Phase V Lahore', '0300-1234567', 'NTN-10001', 'duplicate identity variant']
+Row 3: ['FBR-CX-0003', 'Ali Raza Sheikh', '52000', '0', 'Non-Filer', 'Bungalow 18 Khayaban-e-Ittehad DHA Karachi', '0312 4567890', 'NTN-10002', 'proxy suspected']
+
+============================================================
+CSV: data/cust-csv/property_transfers_complex.csv
+============================================================
+Headers: ['registry_no', 'buyer_name', 'seller_name', 'property_address', 'property_value_pkr', 'transfer_date', 'area_marla', 'property_type', 'buyer_phone', 'source_note']
+Row 1: ['REG-CX-0001', 'Muhammad A. Khan', 'Private Seller', 'House 21 Street 4 DHA Phase 5 Lahore', '135000000', '2025-03-14', '40', 'House', '03001234567', 'direct luxury property']
+Row 2: ['REG-CX-0002', 'Household Khan', 'Private Seller', 'House 21 St 4 DHA Ph 5 Lahore', '78000000', '2025-04-02', '20', 'Plot', '', 'possible household/proxy']
+Row 3: ['REG-CX-0003', 'Noman Raza', 'Private Seller', 'Bungalow 18 Khayaban e Ittehad DHA Karachi', '115000000', '2025-02-19', '40', 'House', '03124567890', 'proxy property']
+
+============================================================
+PDF: data/energy-mining-data/Mineral-Production-Data-2021-22.pdf
+============================================================
+MINERALS PRODUCTION DATA
+S.
+N
+O
+2021-22
+(F)
+( unit MT )
+Name of
+PROVINCES
+Mineral
+July,21
+Aug,21
+Sept,21
+Oct,21
+Nov,21
+
+============================================================
+PDF: data/energy-mining-data/Mineral-production-2023-24.pdf
+============================================================
+MINERALS PRODUCTION DATA
+S.NO Name of Mineral
+ARGI-CLAY
+2
+BARYTE
+3
+BAUXITE
+4
+BENTONITE
+5
+BRINE LSM
+6
+CHALK
+7
+CALCITE
+
+============================================================
+PDF: data/energy-mining-data/Minerals-Production-Data-2016-17.pdf
+============================================================
+MINERALS PRODUCTION DATA
+Name of Mineral
+2016-17
+( Unit MT )
+PROVINCES
+July,16
+Aug,16
+Sept,16
+Oct,16
+Nov,16
+Dec,16
+Jan,17
+Feb, 17
+Mar,17
+Apr,17
+
+============================================================
+Excel: data/energy-mining-data/Minerals-Production-Data-2017-18.xlsx
+============================================================
+Sheets: ['17-18', 'Sheet1', 'merging', 'Quarterly', 'final']
+Shape: (196, 15)
+Columns: ['                 MINERALS PRODUCTION DATA     2017-18                                                ( unit MT )', 'Unnamed: 1', 'Unnamed: 2', 'Unnamed: 3', 'Unnamed: 4', 'Unnamed: 5', 'Unnamed: 6', 'Unnamed: 7', 'Unnamed: 8', 'Unnamed: 9', 'Unnamed: 10', 'Unnamed: 11', 'Unnamed: 12', 'Unnamed: 13', 'Unnamed: 14']
+                   MINERALS PRODUCTION DATA     2017-18                                                ( unit MT ) Unnamed: 1 Unnamed: 2 Unnamed: 3 Unnamed: 4 Unnamed: 5 Unnamed: 6 Unnamed: 7 Unnamed: 8 Unnamed: 9 Unnamed: 10 Unnamed: 11 Unnamed: 12 Unnamed: 13  Unnamed: 14
+0                                                                                                  Name of Mineral  PROVINCES    July,17     Aug,17    Sept,17     Oct,17     Nov,17     Dec,17     Jan,18    Feb, 18      Mar,18      Apr,18      May,18     June,18  Grand-Total
+1                                                                                                              NaN        NaN        NaN        NaN        NaN        NaN        NaN        NaN        NaN        NaN         NaN         NaN         NaN         NaN          NaN
+2                                                                                                    AMPHIBOLITIES        KPK          0         41          0         39          0         37        110         90          75          80           0           0          472
+
+============================================================
+Excel: data/energy-mining-data/Minerals-Production-Data-2018-19.xlsx
+============================================================
+Sheets: ['Original']
+Shape: (161, 18)
+Columns: ['                 MINERALS PRODUCTION DATA     2018-19                                                ( unit MT )', 'Unnamed: 1', 'Unnamed: 2', 'Unnamed: 3', 'Unnamed: 4', 'Unnamed: 5', 'Unnamed: 6', 'Unnamed: 7', 'Unnamed: 8', 'Unnamed: 9', 'Unnamed: 10', 'Unnamed: 11', 'Unnamed: 12', 'Unnamed: 13', 'Unnamed: 14', 'Unnamed: 15', 'Unnamed: 16', 'Unnamed: 17']
+                   MINERALS PRODUCTION DATA     2018-19                                                ( unit MT )       Unnamed: 1 Unnamed: 2 Unnamed: 3 Unnamed: 4 Unnamed: 5 Unnamed: 6 Unnamed: 7 Unnamed: 8 Unnamed: 9 Unnamed: 10 Unnamed: 11 Unnamed: 12 Unnamed: 13 Unnamed: 14  Unnamed: 15  Unnamed: 16  Unnamed: 17
+0                                                                                                             S.NO  Name of Mineral  PROVINCES    July,18     Aug,18    Sept,18     Oct,18     Nov,18     Dec,18     Jan,19     Feb, 19      Mar,19      Apr,19      May,19     June,19  Grand-Total          NaN          NaN
+1                                                                                                                1        ARGI-CLAY     Punjab     435647     492027     516020     550631     389246     542986     524115      367480      452555      448374      477696      512908      5709685          NaN          NaN
+2                                                                                                              NaN              NaN      Total     435647     492027     516020     550631     389246     542986     524115      367480      452555      448374      477696      512908      5709685          NaN          NaN
+
+============================================================
+Excel: data/energy-mining-data/Minerals-Production-Data-2019-20.xlsx
+============================================================
+Sheets: ['Original']
+Shape: (185, 21)
+Columns: ['                 MINERALS PRODUCTION DATA     2019-20                                                ( unit MT )', 'Unnamed: 1', 'Unnamed: 2', 'Unnamed: 3', 'Unnamed: 4', 'Unnamed: 5', 'Unnamed: 6', 'Unnamed: 7', 'Unnamed: 8', 'Unnamed: 9', 'Unnamed: 10', 'Unnamed: 11', 'Unnamed: 12', 'Unnamed: 13', 'Unnamed: 14', 'Unnamed: 15', 'Unnamed: 16', 'Unnamed: 17', 'Unnamed: 18', 'Unnamed: 19', 'Unnamed: 20']
+                   MINERALS PRODUCTION DATA     2019-20                                                ( unit MT )       Unnamed: 1 Unnamed: 2 Unnamed: 3 Unnamed: 4 Unnamed: 5 Unnamed: 6 Unnamed: 7 Unnamed: 8 Unnamed: 9 Unnamed: 10 Unnamed: 11 Unnamed: 12 Unnamed: 13 Unnamed: 14 Unnamed: 15  Unnamed: 16  Unnamed: 17  Unnamed: 18  Unnamed: 19  Unnamed: 20
+0                                                                                                             S.NO  Name of Mineral  PROVINCES    July,19     Aug,19    Sept,19     Oct,19     Nov,19     Dec,19     Jan,20     Feb, 20      Mar,20      Apr,20      May,20     June,20  Year Total          NaN          NaN          NaN          NaN          NaN
+1                                                                                                                1        ARGI-CLAY     Punjab     534002     415139     443983     594345     589937     568911     454200      602768      410527      382258      486442      502798     5985310          NaN          NaN          NaN          NaN          NaN
+2                                                                                                              NaN              NaN      Total     534002     415139     443983     594345     589937     568911     454200      602768      410527      382258      486442      502798     5985310          NaN          NaN          NaN          NaN          NaN
+
+============================================================
+PDF: data/energy-mining-data/detail-tables-11.6.24.pdf
+============================================================
+S. No Name of Establishment
+1
+Kanupp
+3
+WAPDA Hydel
+4
+HUBCO
+5
+IPPs
+6
+KAPCO
+7
+KESC
+8
+PASMIC
+
+============================================================
+Excel: data/energy-mining-data/detail-tables-3.4.23-2.xlsx
+============================================================
+Sheets: ['Electricity generation', 'mineral production']
+Shape: (1750, 16)
+Columns: ['Electricity Generation Data 1999-2000 Unit:GWH', 'Unnamed: 1', 'Unnamed: 2', 'Unnamed: 3', 'Unnamed: 4', 'Unnamed: 5', 'Unnamed: 6', 'Unnamed: 7', 'Unnamed: 8', 'Unnamed: 9', 'Unnamed: 10', 'Unnamed: 11', 'Unnamed: 12', 'Unnamed: 13', 'Unnamed: 14', 'Unnamed: 15']
+  Electricity Generation Data 1999-2000 Unit:GWH             Unnamed: 1 Unnamed: 2 Unnamed: 3 Unnamed: 4 Unnamed: 5 Unnamed: 6 Unnamed: 7 Unnamed: 8 Unnamed: 9 Unnamed: 10 Unnamed: 11 Unnamed: 12 Unnamed: 13 Unnamed: 14 Unnamed: 15
+0                                          S. No  Name of Establishment       Fuel  July,1999   Aug,1999   Sep,1999   Oct,1999   Nov,1999   Dec,1999   Jan,2000    Feb,2000    Mar,2000    Apr,2000    May,2000    Jun,2000       Total
+1                                              1                 Kanupp    Nuclear        ---        ---        ---        ---         28         50         50          40          61          59          60          51         399
+2                                              3           WAPDA Hydel       Hydel       2643       3033       3029       1795       1752       1179        622         900         641         682        1576        1436       19288
+
+============================================================
+PDF: data/energy-mining-data/mineral-production-2022-23-Original.pdf
+============================================================
+MINERALS PRODUCTION DATA
+S.
+Name of
+N
+Mineral
+O
+2022 -23(R)
+( unit MT )
+PROVINCES July,22
+Aug,22
+Sept,22
+Oct,22
+Nov,22
+Dec,22
+Jan,23
+
+============================================================
+PDF: data/energy-mining-data/minerals_production_data_2005_06.pdf
+============================================================
+MINERALS PRODUCTION DATA
+2005-06
+Unit: MT
+S.NO Name of Mineral
+1
+ARGI-CLAY
+2
+BARYTE
+3
+BAUXITE
+4
+BENTONITE
+5
+BRINE
+6
+
+============================================================
+PDF: data/energy-mining-data/minerals_production_data_2006_07.pdf
+============================================================
+S.NO Name of Mineral
+1
+ARGI-CLAY
+2
+BARYTE
+3
+BAUXITE
+4
+BENTONITE
+5
+BRINE
+6
+CALCITE
+7
+CHALK
+
+============================================================
+PDF: data/energy-mining-data/minerals_production_data_2007_08.pdf
+============================================================
+MINERALS PRODUCTION DATA
+S.NO
+Name of Mineral
+1
+ARGI-CLAY
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+
+============================================================
+PDF: data/energy-mining-data/minerals_production_data_2008_09.pdf
+============================================================
+MINERALS PRODUCTION DATA
+S.NO
+1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+Name of Mineral
+
+============================================================
+PDF: data/energy-mining-data/minerals_production_data_2009_10.pdf
+============================================================
+MINERALS PRODUCTION DATA
+S.NO
+Name of Mineral
+Provinces
+1
+ARGI-CLAY
+Punjab
+Total
+KPK
+Balochistan
+Total
+Punjab
+Total
+Punjab
+Sindh
+
+============================================================
+PDF: data/energy-mining-data/minerals_production_data_2010_11.pdf
+============================================================
+MINERALS PRODUCTION DATA
+S.NO
+Name of Mineral
+1
+ARGI-CLAY
+2
+BARYTE
+3
+BAUXITE
+Provinces
+5
+6
+7
+8
+9
+
+============================================================
+PDF: data/energy-mining-data/minerals_production_data_2011_12.pdf
+============================================================
+MINERALS PRODUCTION DATA
+S.NO
+Name of Mineral
+1
+ARGI-CLAY
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+
+============================================================
+PDF: data/energy-mining-data/minerals_production_data_2012_13.pdf
+============================================================
+S.NO
+Name of Mineral
+1
+ARGI-CLAY
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+
+============================================================
+PDF: data/energy-mining-data/minerals_production_data_2013_14.pdf
+============================================================
+MINERALS PRODUCTION DATA
+S.NO
+Name of Mineral
+1
+ARGI-CLAY
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+
+============================================================
+PDF: data/energy-mining-data/minerals_production_data_2014_15.pdf
+============================================================
+MINERALS PRODUCTION DATA
+S.NO
+Name of Mineral
+1
+ARGI-CLAY
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+
+============================================================
+PDF: data/export-data/2_imp_1994-95_to_1997-98.pdf
+============================================================
+IMPORTS BY COMMODITIES AND COUNTRIES
+PAGE:
+1
+(Value in '000' Rs.)
+-----------------------------------------------------------------------------------------------------------------------------------|
+1994-1995
+|
+1995-1996
+|
+1996-1997
+|
+1997-1998
+Code
+Commodity / Country
+Unit |---------------------|---------------------|---------------------|---------------------| Quantity
+
+============================================================
+PDF: data/export-data/3_imp_1998-99_to_2001-2002.pdf
+============================================================
+IMPORTS BY COMMODITIES AND COUNTRIES
+PAGE:
+1
+(Value in '000' Rs.)
+-----------------------------------------------------------------------------------------------------------------------------------|
+1998-1999
+|
+1999-2000
+|
+2000-2001
+|
+2001-2002
+Code
+Commodity / Country
+Unit |---------------------|---------------------|---------------------|---------------------| Quantity
+
+============================================================
+PDF: data/export-data/4_imp_2002-03_to_2007-08.pdf
+============================================================
+PAKISTAN'S YEAR-WISE IMPORTS OF SELECTED COMMODITIES
+PAGE:
+1
+(Value in '000' Rs.)
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+2002-2003
+|
+2003-2004
+|
+2004-2005
+|
+2005-2006
+|
+2006-2007
+|
+
+============================================================
+PDF: data/export-data/5_exp_2008-09_to_2012-13.pdf
+============================================================
+EXPORTS OF COMMODITIES BY COUNTRIES (Year
+PAGE:
+1
+(Value in '000' Rs.)
+--------------------------------------------------------------------------------------------------------------------------------------------------------|
+2008-2009
+|
+2009-2010
+|
+2010-2011
+|
+2011-2012
+|
+2012-2013
+|
+
+============================================================
+PDF: data/export-data/5_imp_2008-09_to_2012-13.pdf
+============================================================
+IMPORTS OF COMMODITIES BY COUNTRIES (Year
+PAGE:
+1
+(Value in '000' Rs.)
+--------------------------------------------------------------------------------------------------------------------------------------------------------|
+2008-2009
+|
+2009-2010
+|
+2010-2011
+|
+2011-2012
+|
+2012-2013
+|
+
+============================================================
+PDF: data/export-data/6_exp_2013_to_2014-1.pdf
+============================================================
+PAGE
+EXPORTS BY COMMODITIES AND COUNTRIES
+1
+PAKISTAN
+2 0 1 3 - 2 0 1 4
+****** ****************************** **** *******************************************
+HSCODE COMMODITY / COUNTRY
+UNIT
+JUN
+CUMULATIVE FROM JULY
+------ ------------------------------ ---- -------------------- ---------------------QUANTITY
+VALUE
+QUANTITY
+VALUE
+G R A N D T O T A L
+
+============================================================
+PDF: data/export-data/D-10_Export-06-2022.pdf
+============================================================
+(D-10) EXPORTS BY COMMODITES AND COUNTRIES
+PAK RUPEES IN THOUSANDS
+HS CODE
+COMMODITY BY COUNTRY
+UNIT
+CUMULATIVE FROM
+JUL 2021 TO
+JUN 2022
+QUANTITY
+PAK RUPEES
+JUN 2022
+QUANTITY
+PAK RUPEES
+594,984,927
+GRAND TOTAL
+
+============================================================
+PDF: data/export-data/D-10_Export-06-2023.pdf
+============================================================
+(D-10) EXPORTS BY COMMODITES AND COUNTRIES
+HS CODE
+COMMODITY / COUNTRY
+GRAND TOTAL
+1051100 FOWLS (CHICKEN) WT UPTO 185G
+Afghanistan
+Kyrgyzstan/Kyrgyz R.
+1051300 DUCKS, WEIGHT UPTO 185 GRAM
+Kuwait
+1059400 OTH FOWLS OF THE SPE (CHICKEN)
+Afghanistan
+Oman
+1059900 OTH LIVE POULTRY
+Afghanistan
+1063190 OTHER BIRDS OF PREY
+
+============================================================
+PDF: data/export-data/D-10_Export0624.pdf
+============================================================
+(D-10) EXPORTS BY COMMODITES AND COUNTRIES
+PAK RUPEES IN THOUSANDS
+HS CODE
+COMMODITY BY COUNTRY
+UNIT
+CUMULATIVE FROM
+JUL 2023 TO
+JUN 2024
+QUANTITY
+PAK RUPEES
+JUN 2024
+QUANTITY
+PAK RUPEES
+712,281,293
+GRAND TOTAL
+
+============================================================
+PDF: data/export-data/D-10_Import-06-2022.pdf
+============================================================
+(D-10) IMPORTS BY COMMODITES AND COUNTRIES
+PAK RUPEES IN THOUSANDS
+HS CODE
+COMMODITY BY COUNTRY
+UNIT
+PAK RUPEES
+CUMULATIVE FROM
+JUL 2021 TO
+JUN 2022
+QUANTITY
+PAK RUPEES
+1,605,666,323
+14,273,393,997
+JUN 2022
+QUANTITY
+
+============================================================
+PDF: data/export-data/D-10_Import0624.pdf
+============================================================
+(D-10) IMPORTS BY COMMODITES AND COUNTRIES
+PAK RUPEES IN THOUSANDS
+HS CODE
+COMMODITY BY COUNTRY
+UNIT
+CUMULATIVE FROM
+JUL 2023 TO
+JUN 2024
+QUANTITY
+PAK RUPEES
+JUN 2024
+QUANTITY
+PAK RUPEES
+1,382,231,632
+GRAND TOTAL
+
+============================================================
+TXT: data/export-data/EXPORT-BY-COMMODITIES-AND-COUNTRIES-2020-21-1.txt
+============================================================
+                                                                                                                        PAGE    1
+                                       EXPORTS BY COMMODITIES AND COUNTRIES                                          PAKISTAN
+                                                                                                              (RUPEES IN THOUSANDS)
+                                                            2 0 2 0 - 2 0 2 1                               2 0 1 9 - 2 0 2 0
+ ****** ********************  ***************   *******************************************  *****************************************
+ HSCODE COMMODITY / COUNTRY            UNIT        JUN         CUMULATIVE FROM JULY             JUN         CUMULATIVE FROM JULY
+ ****** ********************  ***************   *******************************************  *****************************************
+                                              QUANTITY     VALUE    QUANTITY     VALUE    QUANTITY     VALUE    QUANTITY      VALUE
+
+============================================================
+TXT: data/export-data/EXPORTS-BY-COMMODITIES-AND-COUNTRIES-2015-2016-1.txt
+============================================================
+                                                                                                                        PAGE    1   
+                                       EXPORTS BY COMMODITIES AND COUNTRIES  PAKISTAN                                               
+                                                                                                              (RUPEES IN THOUSANDS) 
+                                                            2 0 1 5 - 2 0 1 6                               2 0 1 4 - 2 0 1 5       
+ ****** ****************************** **** *******************************************  *******************************************
+ HSCODE COMMODITY / COUNTRY            UNIT         JUN            CUMULATIVE FROM JULY          JUN            CUMULATIVE FROM JULY
+ ------ ------------------------------ ---- -------------------- ----------------------  -------------------- ----------------------
+                                              QUANTITY     VALUE    QUANTITY      VALUE    QUANTITY     VALUE    QUANTITY      VALUE
+
+============================================================
+TXT: data/export-data/EXPORTS-BY-COMMODITIES-AND-COUNTRIES-2018-2019-1.txt
+============================================================
+
+
+
+                                                                                                                        PAGE    1
+                                       EXPORTS BY COMMODITIES AND COUNTRIES                                          PAKISTAN
+                                                                                                              (RUPEES IN THOUSANDS)
+                                                            2 0 1 8 - 2 0 1 9                               2 0 1 7 - 2 0 1 8
+ ****** ********************  ***************   *******************************************  *****************************************
+
+============================================================
+TXT: data/export-data/EXPORTS-BY-COMMODITIES-AND-COUNTRIES-2019-2020-1.txt
+============================================================
+                                                                                                                        PAGE    1
+                                       EXPORTS BY COMMODITIES AND COUNTRIES                                          PAKISTAN
+                                                                                                              (RUPEES IN THOUSANDS)
+                                                            2 0 1 9 - 2 0 2 0                               2 0 1 8 - 2 0 1 9
+ ****** ********************  ***************   *******************************************  *****************************************
+ HSCODE COMMODITY / COUNTRY            UNIT        JUN         CUMULATIVE FROM JULY             JUN         CUMULATIVE FROM JULY
+ ****** ********************  ***************   *******************************************  *****************************************
+                                              QUANTITY     VALUE    QUANTITY     VALUE    QUANTITY     VALUE    QUANTITY      VALUE
+
+============================================================
+TXT: data/export-data/EXPORTS-BY-COMMODITIES-AND-COUNTRIES-PAKISTAN-2016-2017-2.txt
+============================================================
+
+
+                                                                                                                        PAGE    1
+                                       EXPORTS BY COMMODITIES AND COUNTRIES  PAKISTAN
+                                                                                                              (RUPEES IN THOUSANDS)
+                                                            2 0 1 6 - 2 0 1 7                               2 0 1 5 - 2 0 1 6
+ ****** ****************************** **** *******************************************  *******************************************
+ HSCODE COMMODITY / COUNTRY            UNIT         JUN            CUMULATIVE FROM JULY          JUN            CUMULATIVE FROM JULY
+
+============================================================
+PDF: data/export-data/Export-by-commodities-and-countries-2014-15-2013-14.P6X-1.pdf
+============================================================
+Export by commodities and countries, 2014-15 & 2013-14.P6X
+1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+
+============================================================
+PDF: data/export-data/Final_POL_Data_2014-15_to_2016-17.pdf
+============================================================
+FINAL POL DATA
+Petroleum Product
+Month/Year
+Jul-14
+Aug-14
+Sep-14
+Oct-14
+Nov-14
+Dec-14
+Jan-15
+Feb-15
+Mar-15
+Apr-15
+May-15
+Jun-15
+
+============================================================
+PDF: data/export-data/Import-by-commodities-and-countries-204-15-2013-14.P6M.pdf
+============================================================
+Import by commodities and countries 204-15 & 2013-14.P6M
+1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+
+============================================================
+PDF: data/export-data/Table-2-2009-10-Base-2005-06.pdf
+============================================================
+TABLE 2. PRODUCTION DATA FOR COMPUTATION OF QUANTUM INDEX OF LARGE SCALE MANUFACTURING INDUSTRIES (QIM) (2005-06=100)
+S. No.
+Unit of
+Quantity
+Items
+Weight
+Jul-09
+112.4
+Aug-09
+112.7
+Sep-09
+111.7
+Oct-09
+112.7
+Nov-09
+
+============================================================
+TXT: data/export-data/exports_commodities_and_countries_2018july_december-1.txt
+============================================================
+
+                                                                                                                        PAGE    1
+                                       EXPORTS BY COMMODITIES AND COUNTRIES                                          PAKISTAN
+                                                                                                              (RUPEES IN THOUSANDS)
+                                                            2 0 1 8 - 2 0 1 9                               2 0 1 7 - 2 0 1 8
+ ****** ********************  ***************   *******************************************  *****************************************
+ HSCODE COMMODITY / COUNTRY            UNIT              DEC         CUMULATIVE FROM JULY             DEC         CUMULATIVE FROM JULY
+ ****** ********************  ***************   *******************************************  *****************************************
+
+============================================================
+Excel: data/hise-data/TABLE_01-1.xls
+============================================================
+Error reading Excel: `Import xlrd` failed. Install xlrd >= 2.0.1 for xls Excel support Use pip or conda to install the xlrd package.
+
+============================================================
+Excel: data/hise-data/TABLE_02-1.xlsx
+============================================================
+Sheets: ['Sheet1', 'Module2']
+Shape: (808, 14)
+Columns: ['TABLE: 02   PERCENTAGE DISTRIBUTION OF EMPLOYED PERSONS (TEN YEARS AND ABOVE) BY AGE, SEX AND ', 'Unnamed: 1', 'Unnamed: 2', 'Unnamed: 3', 'Unnamed: 4', 'Unnamed: 5', 'Unnamed: 6', 'Unnamed: 7', 'Unnamed: 8', 'Unnamed: 9', 'Unnamed: 10', 'Unnamed: 11', 'Unnamed: 12', 'Unnamed: 13']
+  TABLE: 02   PERCENTAGE DISTRIBUTION OF EMPLOYED PERSONS (TEN YEARS AND ABOVE) BY AGE, SEX AND                   Unnamed: 1 Unnamed: 2 Unnamed: 3 Unnamed: 4 Unnamed: 5 Unnamed: 6 Unnamed: 7 Unnamed: 8 Unnamed: 9 Unnamed: 10 Unnamed: 11 Unnamed: 12     Unnamed: 13
+0                                                                    LEVEL OF EDUCATION, 2024-25                         NaN        NaN        NaN        NaN        NaN        NaN        NaN        NaN        NaN         NaN         NaN         NaN             NaN
+1                                                                                            NaN                         NaN        NaN        NaN        NaN        NaN        NaN        NaN        NaN        NaN         NaN         NaN         NaN             NaN
+2                                                                             LEVEL OF EDUCATION  Total (10 Years and Above)      10-14      15-19      20-24      25-29      30-34      35-39      40-44      45-49       50-54       55-59       60-64  65   and above
+
+============================================================
+Excel: data/hise-data/TABLE_03-1.xlsx
+============================================================
+Sheets: ['Sheet1']
+Shape: (621, 7)
+Columns: ['TABLE: 03   PERCENTAGE DISTRIBUTION OF EMPLOYED PERSONS BY INDUSTRY DIVISIONS,', 'Unnamed: 1', 'Unnamed: 2', 'Unnamed: 3', 'Unnamed: 4', 'Unnamed: 5', 'Unnamed: 6']
+  TABLE: 03   PERCENTAGE DISTRIBUTION OF EMPLOYED PERSONS BY INDUSTRY DIVISIONS, Unnamed: 1         Unnamed: 2 Unnamed: 3 Unnamed: 4 Unnamed: 5 Unnamed: 6
+0                                              EMPLOYMENT STATUS BY SEX, 2024-25        NaN                NaN        NaN        NaN        NaN        NaN
+1                                                                            NaN        NaN                NaN        NaN        NaN        NaN        NaN
+2                                                       MAJOR INDUSTRY DIVISIONS      Total  EMPLOYMENT STATUS        NaN        NaN        NaN        NaN
+
+============================================================
+Excel: data/hise-data/TABLE_04-1.xlsx
+============================================================
+Sheets: ['Sheet1']
+Shape: (576, 7)
+Columns: ['TABLE: 04   PERCENTAGE DISTRIBUTION OF EMPLOYED PERSONS BY OCCUPATION GROUPS,', 'Unnamed: 1', 'Unnamed: 2', 'Unnamed: 3', 'Unnamed: 4', 'Unnamed: 5', 'Unnamed: 6']
+  TABLE: 04   PERCENTAGE DISTRIBUTION OF EMPLOYED PERSONS BY OCCUPATION GROUPS,         Unnamed: 1 Unnamed: 2 Unnamed: 3 Unnamed: 4 Unnamed: 5 Unnamed: 6
+0                                             EMPLOYMENT STATUS BY SEX, 2024-25                NaN        NaN        NaN        NaN        NaN        NaN
+1                                                                           NaN                NaN        NaN        NaN        NaN        NaN        NaN
+2                                                       MAJOR OCCUPATION GROUPS  EMPLOYMENT STATUS        NaN        NaN        NaN        NaN        NaN
+
+============================================================
+Excel: data/hise-data/TABLE_05-1.xls
+============================================================
+Error reading Excel: `Import xlrd` failed. Install xlrd >= 2.0.1 for xls Excel support Use pip or conda to install the xlrd package.
+
+============================================================
+Excel: data/hise-data/TABLE_06-1.xls
+============================================================
+Error reading Excel: `Import xlrd` failed. Install xlrd >= 2.0.1 for xls Excel support Use pip or conda to install the xlrd package.
+
+============================================================
+Excel: data/hise-data/TABLE_07-1.xls
+============================================================
+Error reading Excel: `Import xlrd` failed. Install xlrd >= 2.0.1 for xls Excel support Use pip or conda to install the xlrd package.
+
+============================================================
+Excel: data/hise-data/TABLE_10-1.xls
+============================================================
+Error reading Excel: `Import xlrd` failed. Install xlrd >= 2.0.1 for xls Excel support Use pip or conda to install the xlrd package.
+
+============================================================
+Excel: data/hise-data/TABLE_12-2.xls
+============================================================
+Error reading Excel: `Import xlrd` failed. Install xlrd >= 2.0.1 for xls Excel support Use pip or conda to install the xlrd package.
+
+============================================================
+Excel: data/hise-data/TABLE_13-1.xls
+============================================================
+Error reading Excel: `Import xlrd` failed. Install xlrd >= 2.0.1 for xls Excel support Use pip or conda to install the xlrd package.
+
+============================================================
+Excel: data/hise-data/TABLE_14-1.xls
+============================================================
+Error reading Excel: `Import xlrd` failed. Install xlrd >= 2.0.1 for xls Excel support Use pip or conda to install the xlrd package.
+
+============================================================
+Excel: data/hise-data/TABLE_15-1.xls
+============================================================
+Error reading Excel: `Import xlrd` failed. Install xlrd >= 2.0.1 for xls Excel support Use pip or conda to install the xlrd package.
+
+============================================================
+Excel: data/hise-data/TABLE_16-1.xls
+============================================================
+Error reading Excel: `Import xlrd` failed. Install xlrd >= 2.0.1 for xls Excel support Use pip or conda to install the xlrd package.
+
+============================================================
+Excel: data/hise-data/TABLE_17.xls
+============================================================
+Error reading Excel: `Import xlrd` failed. Install xlrd >= 2.0.1 for xls Excel support Use pip or conda to install the xlrd package.
+
+============================================================
+Excel: data/hise-data/TABLE_18-1.xls
+============================================================
+Error reading Excel: `Import xlrd` failed. Install xlrd >= 2.0.1 for xls Excel support Use pip or conda to install the xlrd package.
+
+============================================================
+Excel: data/hise-data/TABLE_19-1.xls
+============================================================
+Error reading Excel: `Import xlrd` failed. Install xlrd >= 2.0.1 for xls Excel support Use pip or conda to install the xlrd package.
+
+============================================================
+Excel: data/hise-data/TABLE_20-1.xls
+============================================================
+Error reading Excel: `Import xlrd` failed. Install xlrd >= 2.0.1 for xls Excel support Use pip or conda to install the xlrd package.
+
+============================================================
+Excel: data/hise-data/TABLE_21-1.xls
+============================================================
+Error reading Excel: `Import xlrd` failed. Install xlrd >= 2.0.1 for xls Excel support Use pip or conda to install the xlrd package.
+
+============================================================
+Excel: data/hise-data/TABLE_22.xlsx
+============================================================
+Sheets: ['Sheet1']
+Shape: (1880, 7)
+Columns: ['TABLE: 22   MONTHLY PER CAPITA CONSUMPTION  EXPENDITURE PER  HOUSEHOLD BY                                                                ', 'Unnamed: 1', 'Unnamed: 2', 'Unnamed: 3', 'Unnamed: 4', 'Unnamed: 5', 'Unnamed: 6']
+  TABLE: 22   MONTHLY PER CAPITA CONSUMPTION  EXPENDITURE PER  HOUSEHOLD BY                                                                 Unnamed: 1 Unnamed: 2 Unnamed: 3 Unnamed: 4 Unnamed: 5 Unnamed: 6
+0                                                                                              MAJOR GROUPS OF ITEMS  AND QUINTILES,2024-25        NaN        NaN        NaN        NaN        NaN        NaN
+1                                                                                                                              MAJOR GROUPS  QUINTILES        NaN        NaN        NaN        NaN        NaN
+2                                                                                                                                       NaN      Total        1st        2nd        3rd        4th        5th
+
+============================================================
+Excel: data/hise-data/TABLE_23-2.xls
+============================================================
+Error reading Excel: `Import xlrd` failed. Install xlrd >= 2.0.1 for xls Excel support Use pip or conda to install the xlrd package.
+
+============================================================
+Excel: data/hise-data/TABLE_24-1.xls
+============================================================
+Error reading Excel: `Import xlrd` failed. Install xlrd >= 2.0.1 for xls Excel support Use pip or conda to install the xlrd package.
+
+============================================================
+Excel: data/hise-data/TABLE_25-1.xls
+============================================================
+Error reading Excel: `Import xlrd` failed. Install xlrd >= 2.0.1 for xls Excel support Use pip or conda to install the xlrd package.
+
+============================================================
+Excel: data/hise-data/Table_11-1.xls
+============================================================
+Error reading Excel: `Import xlrd` failed. Install xlrd >= 2.0.1 for xls Excel support Use pip or conda to install the xlrd package.
+
+============================================================
+PDF: data/labor-data/Report-1.pdf
+============================================================
+TABLE 1 Pakistan
+PERCENTAGE DISTRIBUTION OF POPULATION BY AGE, SEX AND AREA 2024-25
+Population (PAK)
+Age Groups
+All Areas
+(Years)
+Rural
+Urban
+Total
+Male
+Female
+Total
+Male
+Female
+Total
+
+============================================================
+PDF: data/labor-data/Report-10-2.pdf
+============================================================
+TABLE 10
+PERCENTAGE DISTRIBUTION OF MIGRANT POPULATION 10 YEARS AND OVER BY PLACE OF
+PRESENT AND PREVIOUS RESIDENCE, AREA, SEX AND PROVINCES 2024-25
+Place of Previous Residence (All Areas)
+Place of Present Residence
+(Rural)
+Total
+Khyber Pukhtunkhwa
+Punjab
+Sindh
+Balochistan
+AJK
+GB
+1
+2
+
+============================================================
+PDF: data/labor-data/Report-11.pdf
+============================================================
+TABLE 11
+PERCENTAGE DISTRIBUTION OF MIGRANT POPULATION 10 YEARS AND OVER BY PLACE OF
+PRESENT AND PREVIOUS RESIDENCE, AREA, SEX AND PROVINCES 2024-25
+Place of Previous Residence (All Areas)
+Place of Present Residence
+(Urban)
+Total
+Khyber Pukhtunkhwa
+Punjab
+Sindh
+Balochistan
+AJK
+GB
+1
+2
+
+============================================================
+PDF: data/labor-data/Report-12-.pdf
+============================================================
+TABLE 12
+PERCENTAGE DISTRIBUTION OF MIGRANT POPULATION 10 YEARS AND OVER BY PLACE OF PRESENT AND
+PREVIOUS RESIDENCE, AREA, SEX AND PROVINCES 2024-25
+Place of Previous Residence (All Areas)
+Place of Present Residence
+Total
+Khyber Pukhtunkhwa
+Punjab
+Sindh
+Balochistan
+AJK
+GB
+Other
+Countries
+2
+
+============================================================
+PDF: data/labor-data/Report-13.pdf
+============================================================
+TABLE 13 Pakistan
+PERCENTAGE DISTRIBUTION OF MIGRANT POPULATION 10 YEARS OF AGE AND OVER BY MAIN
+REASONS OF MIGRATION, SEX AND AREA 2024-25
+Migrant Population
+All Areas
+Main Reason of Migrant
+Rural
+Urban
+Total
+Male
+Female
+Total
+Male
+Female
+Total
+
+============================================================
+PDF: data/labor-data/Report-14-2.pdf
+============================================================
+TABLE 14 Pakistan
+PERCENTAGE DISTRIBUTION OF MIGRANT EMPLOYED PERSONS 10 YEARS OF AGE AND OVER BY EMPLOYMENT STATUS,
+NUMBER OF HOURS WORKED DURING REFERENCE WEEK AND SEX 2024-25
+Number of Employed Persons by Hours Worked
+Employment Status
+Total
+1
+Less than 05
+Not Worked
+05-09 Hours 10-14 Hours 15-24 Hours 25-34 Hours 35-39 Hours 40-41 Hours 42-48 Hours
+Hours
+49-55
+Hours
+56 Hours
+and over
+
+============================================================
+PDF: data/labor-data/Report-15.pdf
+============================================================
+TABLE 15 Pakistan
+LABOUR FORCE PARTICIPATION RATES AND UN-EMPLOYMENT RATES BY
+AGE, SEX AND AREA 2024-25
+Age Groups (Years)
+Labour Force Participation Rates
+Un-Employment Rates
+Total
+2
+Male
+3
+Female
+4
+Total
+5
+Male
+
+============================================================
+PDF: data/labor-data/Report-2.pdf
+============================================================
+TABLE 2
+PERCENTAGE DISTRIBUTION OF POPULATION BY SEX, AREA AND PROVINCE 2024-25
+Population
+All Areas
+Rural
+Urban
+Province
+Total
+Male
+Female
+Total
+Male
+Female
+Total
+Male
+
+============================================================
+PDF: data/labor-data/Report-3.pdf
+============================================================
+TABLE 3 Pakistan
+PERCENTAGE DISTRIBUTION OF POPULATION BY AGE, SEX, LITERACY AND LEVEL OF EDUCATION 2024-25
+Level of Education
+Total
+Illiterate
+Literate
+Never attended
+School
+Formal
+Education
+Nursery but
+below K.G.
+K.G. but
+Below
+Primary
+
+============================================================
+PDF: data/labor-data/Report-4.pdf
+============================================================
+TABLE 4 Pakistan
+PERCENTAGE DISTRIBUTION OF POPULATION 10 YEARS OF AGE AND OVER
+BY AGE, SEX AND MARITAL STATUS 2024-25
+Marital Status
+Age groups (Years)
+1
+Total
+Never Married
+Married
+Widow/Widower
+Divorced
+2
+3
+4
+5
+
+============================================================
+PDF: data/labor-data/Report-5-2.pdf
+============================================================
+TABLE 5 Pakistan
+PERCENTAGE DISTRIBUTION OF POPULATION 10 YEARS AGE AND OVER BY AGE,
+SEX, AREA AND NATURE OF ACTIVITIES 2024-25
+Age Groups
+Population
+Civilian Labour Force
+Out of Labour Force
+(Years)
+Total
+Male
+Female
+Total
+Male
+Female
+Total
+
+============================================================
+PDF: data/labor-data/Report-6-1.pdf
+============================================================
+TABLE 6 Pakistan
+PERCENTAGE DISTRIBUTION OF CIVILIAN LABOUR FORCE 10 YEARS OF AGE AND
+OVER BY AGE, SEX, AREA AND NATURE OF ACTIVITIES 2024-25
+Civilian Labour Force
+Employed
+Age Groups
+Labour Force
+(Years)
+Unemployed
+Total
+Male
+Female
+Total
+Male
+Female
+
+============================================================
+PDF: data/labor-data/Report-7-3.pdf
+============================================================
+TABLE 7 Pakistan
+PERCENTAGE DISTRIBUTION OF POPULATION 10 YEARS OF AGE AND OVER BY LEVEL OF
+EDUCATION, SEX AND NATURE OF ACTIVITIES 2024-25
+Level of Education
+Nature of Activities
+Total
+Illiterate
+Literate
+Never attended
+School
+Pre-Matric
+Matric
+Inter
+Degree & Post Grad,
+M.Phil/ Ph.D.
+
+============================================================
+PDF: data/labor-data/Report-8-1.pdf
+============================================================
+TABLE 8
+PERCENTAGE DISTRIBUTION OF POPULATION 10 YEARS OF AGE AND OVER
+BY MIGRATION STATUS, SEX, AREA AND PROVINCE 2024-25
+Population 10 Years of Age and Over
+Non – Migrant
+Total Population
+Province/
+Area
+Migrant
+Total
+Male
+Female
+Total
+Male
+Female
+
+============================================================
+PDF: data/labor-data/Report-9-2.pdf
+============================================================
+TABLE 9
+PERCENTAGE DISTRIBUTION OF MIGRANT POPULATION 10 YEARS AND OVER BY PLACE OF
+PRESENT AND PREVIOUS RESIDENCE, AREA, SEX AND PROVINCES 2024-25
+Place of Previous Residence (All Areas)
+Place of Present Residence
+1
+Total
+Khyber Pukhtunkhwa
+Punjab
+Sindh
+Balochistan
+AJK
+GB
+2
+3
+
+============================================================
+TXT: data/sample_report.txt
+============================================================
+
+============================================================
+CSV: data/cust-csv/disco_consumption_complex.csv
+============================================================
+Headers: ['meter_ref_no', 'consumer_name', 'installation_address', 'avg_monthly_bill_pkr', 'connection_type', 'phone_number', 'division', 'source_note']
+Row 1: ['LESCO-CX-0001', 'M. Ahmed Khan', 'H 21 St 4 DHA Ph 5 Lahore', '310000', 'Residential', '03001234567', 'Lahore', 'direct high utility']
+Row 2: ['LESCO-CX-0002', 'Household Khan', 'House 21 Street 4 DHA Phase 5 Lahore', '220000', 'Residential', '', 'Lahore', 'household high utility']
+Row 3: ['K-ELEC-CX-0003', 'Ali Raza Sheikh', 'Bungalow 18 Khayaban-e-Ittehad DHA Karachi', '240000', 'Residential', '03124567890', 'Karachi', 'proxy household high utility']
+
+============================================================
+CSV: data/tax-data/API_PAK_GC.TAX.TOTL.GD.ZS_EN_csv_v2_123570/API_PAK_GC.TAX.TOTL.GD.ZS_EN_csv_v2_123570.csv
+============================================================
+Headers: ['\ufeff"Data Source"', 'World Development Indicators', '']
+Row 1: []
+Row 2: ['Last Updated Date', '2026-04-08', '']
+Row 3: []
+
+============================================================
+CSV: data/tax-data/API_PAK_GC.TAX.TOTL.GD.ZS_EN_csv_v2_123570/Metadata_Country_API_PAK_GC.TAX.TOTL.GD.ZS_EN_csv_v2_123570.csv
+============================================================
+Headers: ['\ufeff"Country Code"', 'Region', 'IncomeGroup', 'SpecialNotes', 'TableName', '']
+Row 1: ['PAK', 'Middle East & North Africa', 'Lower middle income', 'The reporting period for national accounts data is designated as either calendar year basis (CY) or fiscal year basis (FY). For this country, it is fiscal year-based (fiscal year-end: June 30). Also, an estimate (PA.NUS.ATLS) of the exchange rate covers the same period and thus differs from the official exchange rate (CY).', 'Pakistan', '']
+
+============================================================
+CSV: data/tax-data/API_PAK_GC.TAX.TOTL.GD.ZS_EN_csv_v2_123570/Metadata_Indicator_API_PAK_GC.TAX.TOTL.GD.ZS_EN_csv_v2_123570.csv
+============================================================
+Headers: ['\ufeff"INDICATOR_CODE"', 'INDICATOR_NAME', 'SOURCE_NOTE', 'SOURCE_ORGANIZATION', '']
+Row 1: ['GC.TAX.TOTL.GD.ZS', 'Tax revenue (% of GDP)', 'Taxes are compulsory, unrequited payments, in cash or in kind, made by institutional\n\n\nunits to government units. This indicator is expressed as a percentage of Gross Domestic Product (GDP) which is the total income earned through the production of goods and services in an economic territory during an accounting period.', 'Government Finance Statistics Yearbook and data files, International Monetary Fund (IMF)', '']
+
+============================================================
+CSV: data/tax-data/API_PAK_NY.GDP.MKTP.CD_EN_csv_v2_87791/API_PAK_NY.GDP.MKTP.CD_EN_csv_v2_87791.csv
+============================================================
+Headers: ['\ufeff"Data Source"', 'World Development Indicators', '']
+Row 1: []
+Row 2: ['Last Updated Date', '2026-04-08', '']
+Row 3: []
+
+============================================================
+CSV: data/tax-data/API_PAK_NY.GDP.MKTP.CD_EN_csv_v2_87791/Metadata_Country_API_PAK_NY.GDP.MKTP.CD_EN_csv_v2_87791.csv
+============================================================
+Headers: ['\ufeff"Country Code"', 'Region', 'IncomeGroup', 'SpecialNotes', 'TableName', '']
+Row 1: ['PAK', 'Middle East & North Africa', 'Lower middle income', 'The reporting period for national accounts data is designated as either calendar year basis (CY) or fiscal year basis (FY). For this country, it is fiscal year-based (fiscal year-end: June 30). Also, an estimate (PA.NUS.ATLS) of the exchange rate covers the same period and thus differs from the official exchange rate (CY).', 'Pakistan', '']
+
+============================================================
+CSV: data/tax-data/API_PAK_NY.GDP.MKTP.CD_EN_csv_v2_87791/Metadata_Indicator_API_PAK_NY.GDP.MKTP.CD_EN_csv_v2_87791.csv
+============================================================
+Headers: ['\ufeff"INDICATOR_CODE"', 'INDICATOR_NAME', 'SOURCE_NOTE', 'SOURCE_ORGANIZATION', '']
+Row 1: ['NY.GDP.MKTP.CD', 'GDP (current US$)', 'Gross domestic product is the total income earned through the production of goods and services in an economic territory during an accounting period. It can be measured in three different ways: using either the expenditure approach, the income approach, or the production approach. This indicator is expressed in current prices, meaning no adjustment has been made to account for price changes over time. This indicator is expressed in United States dollars.', 'Country official statistics, National Statistical Organizations and/or Central Banks;\nNational Accounts data files, Organisation for Economic Co-operation and Development (OECD);\nStaff estimates, World Bank (WB)', '']
+
+============================================================
+CSV: data/tax-data/API_PAK_SP.POP.TOTL_EN_csv_v2_42961/API_PAK_SP.POP.TOTL_EN_csv_v2_42961.csv
+============================================================
+Headers: ['\ufeff"Data Source"', 'World Development Indicators', '']
+Row 1: []
+Row 2: ['Last Updated Date', '2026-04-08', '']
+Row 3: []
+
+============================================================
+CSV: data/tax-data/API_PAK_SP.POP.TOTL_EN_csv_v2_42961/Metadata_Country_API_PAK_SP.POP.TOTL_EN_csv_v2_42961.csv
+============================================================
+Headers: ['\ufeff"Country Code"', 'Region', 'IncomeGroup', 'SpecialNotes', 'TableName', '']
+Row 1: ['PAK', 'Middle East & North Africa', 'Lower middle income', 'The reporting period for national accounts data is designated as either calendar year basis (CY) or fiscal year basis (FY). For this country, it is fiscal year-based (fiscal year-end: June 30). Also, an estimate (PA.NUS.ATLS) of the exchange rate covers the same period and thus differs from the official exchange rate (CY).', 'Pakistan', '']
+
+============================================================
+CSV: data/tax-data/API_PAK_SP.POP.TOTL_EN_csv_v2_42961/Metadata_Indicator_API_PAK_SP.POP.TOTL_EN_csv_v2_42961.csv
+============================================================
+Headers: ['\ufeff"INDICATOR_CODE"', 'INDICATOR_NAME', 'SOURCE_NOTE', 'SOURCE_ORGANIZATION', '']
+Row 1: ['SP.POP.TOTL', 'Population, total', 'Total population is based on the de facto definition of population, which counts all residents regardless of legal status or citizenship. The values shown are midyear estimates.', 'World Population Prospects, United Nations (UN), uri: https://population.un.org/wpp/, publisher: UN Population Division;\nStatistical databases and publications from national statistical offices, National Statistical Offices, uri: https://unstats.un.org/home/nso_sites/, publisher: National Statistical Offices;\nEurostat: Demographic Statistics, Eurostat (ESTAT), uri: https://ec.europa.eu/eurostat/data/database?node_code=earn_ses_monthly, publisher: Eurostat;\nPopulation and Vital Statistics Report (various years), United Nations (UN), uri: https://unstats.un.org, publisher: UN Statistics Division', '']
+
+============================================================
+Excel: data/tax-data/UNUWIDERGRD_2025_Central.xlsx
+============================================================
+Sheets: ['LCU', 'PCTGDP', 'GDP', 'Reg_Inc']
+Shape: (7299, 66)
+Columns: ['Database source', 'Govern-ment', 'datastatuscode', 'identifier', 'country', 'iso', 'downloadyr', 'Data status', 'Fiscal year', 'year', 'Reg', 'Inc', 'x', 'currency', 'GDP lcu mn', 'Common GDP Series', 'Flag 1 if substitute GDP, 0 if leave alone', 'Revenue Data Scalar', 'Total Revenue', 'Unnamed: 19', 'Unnamed: 20', 'Unnamed: 21', 'Total Resource Revenue', 'Total Non-Resource Revenue (inc SC)', 'Taxes', 'Unnamed: 25', 'Resource Taxes', 'Non-Resource Tax', 'Unnamed: 28', 'Direct Taxes', 'Unnamed: 30', 'Unnamed: 31', 'Unnamed: 32', 'Taxes on Income, Profits & Capital Gains', 'Unnamed: 34', 'Unnamed: 35', 'Unnamed: 36', 'Unnamed: 37', 'Unnamed: 38', 'Unnamed: 39', 'Taxes on Payroll & Workforce', 'Property Taxes', 'Indirect Taxes', 'Unnamed: 43', 'Unnamed: 44', 'Taxes on Goods and Services', 'Unnamed: 46', 'Unnamed: 47', 'Unnamed: 48', 'Taxes on International Trade', 'Unnamed: 50', 'Unnamed: 51', 'Other Taxes', 'Non-Tax Revenue', 'Unnamed: 54', 'Unnamed: 55', 'Social Contributions', 'Grants', 'General Notes', 'Caution1 Accuracy, Quality or Comparability of data is questionable.', 'Caution 1  Notes', 'Caution2 Resource Revenues / taxes are significant but cannot be isolated from total revenues / taxes', 'Caution3 Un-excluded Resource Revenue are Marginal, but Non-Negligible', 'Resource Revenue Notes', 'Caution 4 Inconsistencies with Social Contributions', 'Social contributions notes']
+      Database source Govern-ment datastatuscode identifier country  iso  downloadyr Data status Fiscal year    year                        Reg          Inc   x       currency GDP lcu mn  Common GDP Series  Flag 1 if substitute GDP, 0 if leave alone  Revenue Data Scalar     Total Revenue Unnamed: 19       Unnamed: 20 Unnamed: 21  Total Resource Revenue  Total Non-Resource Revenue (inc SC)         Taxes   Unnamed: 25  Resource Taxes Non-Resource Tax   Unnamed: 28  Direct Taxes  Unnamed: 30   Unnamed: 31  Unnamed: 32 Taxes on Income, Profits & Capital Gains         Unnamed: 34             Unnamed: 35 Unnamed: 36 Unnamed: 37         Unnamed: 38              Unnamed: 39  Taxes on Payroll & Workforce  Property Taxes Indirect Taxes         Unnamed: 43             Unnamed: 44 Taxes on Goods and Services                               Unnamed: 46 Unnamed: 47  Unnamed: 48 Taxes on International Trade Unnamed: 50 Unnamed: 51  Other Taxes Non-Tax Revenue         Unnamed: 54             Unnamed: 55  Social Contributions  Grants                                                                                                                                                                                                                           General Notes Caution1 Accuracy, Quality or Comparability of data is questionable. Caution 1  Notes Caution2 Resource Revenues / taxes are significant but cannot be isolated from total revenues / taxes  Caution3 Un-excluded Resource Revenue are Marginal, but Non-Negligible Resource Revenue Notes Caution 4 Inconsistencies with Social Contributions                                                   Social contributions notes
+0                 NaN         NaN            NaN        NaN     NaN  NaN         NaN         NaN         NaN     NaN                        NaN          NaN NaN            NaN        NaN                NaN                                         NaN                  NaN  Including Grants         NaN  Excluding Grants         NaN                     NaN                                  NaN  Including SC  Excluding SC             NaN     Including SC  Excluding SC  Including SC          NaN  Excluding SC          NaN                                    Total  Resource Component  Non-Resource Component     o/w PIT     o/w CIT                 NaN                      NaN                           NaN             NaN          Total  Resource Component  Non-Resource Component                       Total  o/w General (Sales, VAT, Turnover, TFCT)         VAT  o/w Excises                        Total  o/w Import  o/w Export          NaN           Total  Resource Component  Non-Resource Component                   NaN     NaN                                                                                                                                                                                                                                     NaN                                                                  NaN              NaN                                                                                                   NaN                                                                     NaN                    NaN                                                 NaN                                                                          NaN
+1                 NaN         NaN            NaN        NaN     NaN  NaN         NaN         NaN         NaN     NaN                        NaN          NaN NaN            NaN        NaN                NaN                                         NaN                  NaN            Inc SC       Ex SC            Inc SC       Ex SC                     NaN                                  NaN           NaN           NaN             NaN              NaN           NaN  Inc Resource  Ex Resource  Inc Resource  Ex Resource                                      NaN                 NaN                     NaN         NaN       Total  Resource component  Non- Resource component                           NaN             NaN            NaN                 NaN                     NaN                         NaN                                       NaN         NaN          NaN                          NaN         NaN         NaN          NaN             NaN                 NaN                     NaN                   NaN     NaN                                                                                                                                                                                                                                     NaN                                                                  NaN              NaN                                                                                                   NaN                                                                     NaN                    NaN                                                 NaN                                                                          NaN
+2  IMF Country Report   Budgetary            NaN    ABW1986   Aruba  ABW         NaN      Actual        1986  1986.0  Latin America & Caribbean  High income NaN  Aruban florin       1204              726.0                                         0.0                  1.0               NaN       321.4               NaN      313.36                     0.0                               313.36           NaN           NaN             NaN              NaN           NaN           NaN          NaN           NaN          NaN                                      NaN                 NaN                     NaN         NaN         NaN                 NaN                      NaN                           NaN             NaN            NaN                 NaN                     NaN                         NaN                                       NaN         NaN          NaN                          NaN         NaN         NaN          NaN             NaN                 NaN                     NaN                   NaN    8.04  Inconsistencies in clasification (i) across country reports, and (ii) between country reports and Aruban MoF data, suggest that the disaggregated categories here are not entirely consistent across time. Some have thus been removed                                                                  NaN              NaN                                                                                                   NaN                                                                     NaN                    NaN                                                 NaN  Set to missing, as cant be sure if zero or just not reported in these years
+
+============================================================
+Excel: data/tax-data/UNUWIDERGRD_2025_Full.xlsx
+============================================================
+Sheets: ['GRD Info & Documentation', 'Merged', 'General', 'Central', 'Common GDP Series', 'Country Metadata', 'Reg_Inc']
+Shape: (27, 3)
+Columns: ['Unnamed: 0', 'Unnamed: 1', 'Unnamed: 2']
+   Unnamed: 0                                                Unnamed: 1 Unnamed: 2
+0         NaN  UNU-WIDER Government Revenue Dataset 2025: Merged (Full)        NaN
+1         NaN                                                       NaN        NaN
+2         NaN                        Technical Note 1: Source Selection        NaN

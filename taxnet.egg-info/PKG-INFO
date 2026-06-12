@@ -1,0 +1,18 @@
+Metadata-Version: 2.4
+Name: taxnet
+Version: 0.2.0
+Summary: TaxNet XAI — Pakistan-first tax fraud detection prototype
+Requires-Python: >=3.11
+Requires-Dist: numpy>=1.26
+Requires-Dist: pandas>=2.0
+Requires-Dist: scikit-learn>=1.4
+Requires-Dist: xgboost-cpu<3.0,>=2.0
+Requires-Dist: shap>=0.45
+Requires-Dist: falkordb>=1.0
+Requires-Dist: openpyxl>=3.1.5
+Requires-Dist: polars>=1.41.2
+Requires-Dist: blockingpy>=0.2.8
+Requires-Dist: model2vec>=0.8.2
+Provides-Extra: dev
+Requires-Dist: pytest>=8.0; extra == "dev"
+Requires-Dist: ruff>=0.4; extra == "dev"

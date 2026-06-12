@@ -5,6 +5,15 @@ const state = {
   uploadProfiles: [],
   mappings: {},
   reportUrl: null,
+  activeTab: "overview",
+  graph: {
+    simulation: null,
+    svg: null,
+    zoom: null,
+    selectedNodeId: null,
+    visibleNodeTypes: new Set(NODE_TYPES.map((t) => t.key)),
+    visibleEdgeTypes: new Set(EDGE_TYPES.map((t) => t.key)),
+  },
 };
 
 const KIND_FIELDS = {
@@ -38,15 +47,66 @@ const FIELD_LABELS = {
 };
 
 const KIND_OPTIONS = ["tax", "vehicle", "utility", "property", "generic"];
-const el = (id) => document.getElementById(id);
-const svgNS = "http://www.w3.org/2000/svg";
+const TIER_ORDER = ["critical", "red", "orange", "yellow", "green"];
+const TIER_LABELS = { critical: "Critical", red: "High", orange: "Medium", yellow: "Low", green: "Clean" };
+const DISPLAY_TIER_ORDER = ["critical", "red", "orange"];
 
-function safe(value) {
-  return String(value ?? "")
+const NODE_TYPES = [
+  { key: "Person", label: "Person", color: "#1a2b4a", shape: "circle" },
+  { key: "Vehicle", label: "Vehicle", color: "#3d6b52", shape: "square" },
+  { key: "Property", label: "Property", color: "#d4b876", shape: "diamond" },
+  { key: "Meter", label: "Utility meter", color: "#5e5c58", shape: "triangle" },
+  { key: "TaxReturn", label: "Tax return", color: "#7a9e7e", shape: "circle" },
+  { key: "OffshoreEntity", label: "Offshore entity", color: "#c88a2a", shape: "hexagon" },
+  { key: "Address", label: "Address", color: "#a64b2a", shape: "square" },
+  { key: "PhoneNumber", label: "Phone number", color: "#7d5a44", shape: "square" },
+];
+
+const EDGE_TYPES = [
+  { key: "USES_ADDRESS", label: "Uses address", color: "#a64b2a", dash: "0" },
+  { key: "USES_PHONE", label: "Uses phone", color: "#7d5a44", dash: "0" },
+  { key: "FILED_IN", label: "Filed tax return", color: "#7a9e7e", dash: "0" },
+  { key: "OWNS_VEHICLE", label: "Owns vehicle", color: "#3d6b52", dash: "0" },
+  { key: "HAS_UTILITY_METER", label: "Has utility meter", color: "#5e5c58", dash: "0" },
+  { key: "BOUGHT_PROPERTY", label: "Bought property", color: "#d4b876", dash: "0" },
+  { key: "LINKED_TO_OFFSHORE_ENTITY", label: "Offshore link", color: "#c88a2a", dash: "0" },
+  { key: "SAME_ADDRESS_AS", label: "Same address", color: "#1a2b4a", dash: "4 4" },
+  { key: "SHARES_PHONE_WITH", label: "Shares phone", color: "#3d6b52", dash: "2 2" },
+];
+
+function tierClass(tier) {
+  return TIER_ORDER.includes(tier) ? tier : "low";
+}
+
+const el = (id) => document.getElementById(id);
+const safe = (value) =>
+  String(value ?? "")
     .replaceAll("&", "&amp;")
     .replaceAll("<", "&lt;")
     .replaceAll(">", "&gt;")
     .replaceAll('"', "&quot;");
+
+function formatNumber(value) {
+  const num = Number(value);
+  if (!Number.isFinite(num)) return "—";
+  if (Math.abs(num) >= 1_000_000) return `₨ ${(num / 1_000_000).toFixed(2)}M`;
+  if (Math.abs(num) >= 1_000) return `₨ ${(num / 1_000).toFixed(1)}K`;
+  return `₨ ${num.toLocaleString()}`;
+}
+
+function formatPKR(value) {
+  const num = Number(value);
+  if (!Number.isFinite(num)) return "—";
+  return `PKR ${num.toLocaleString()}`;
+}
+
+function showToast(message) {
+  const toast = el("toast");
+  toast.textContent = message;
+  toast.hidden = false;
+  setTimeout(() => {
+    toast.hidden = true;
+  }, 3000);
 }
 
 async function parseJsonResponse(response) {
@@ -69,21 +129,44 @@ async function postJson(url, payload) {
   );
 }
 
-function setLoading(label) {
-  el("erStatus").textContent = label;
-  el("graphStatus").textContent = "Waiting";
+function setPipelineStatus(step, label) {
+  const statuses = { ingest: el("ingestStatus"), resolve: el("resolveStatus"), score: el("scoreStatus") };
+  const steps = ["ingest", "resolve", "score"];
+  const index = steps.indexOf(step);
+  if (index === -1) return;
+  statuses[step].textContent = label;
+  document.querySelectorAll(".pipeline-step").forEach((node, idx) => {
+    node.classList.remove("active", "done");
+    if (idx < index) node.classList.add("done");
+    if (idx === index) node.classList.add("active");
+  });
+}
+
+function setLoading() {
+  setPipelineStatus("ingest", "Running");
+  el("resolveStatus").textContent = "Waiting";
   el("scoreStatus").textContent = "Waiting";
   el("exportReport").disabled = true;
+  document.querySelectorAll(".metric-card").forEach((card) => card.classList.add("loading"));
+}
+
+function recordResult(result) {
+  state.result = result;
+  const flagged = result.scoring?.flagged_profiles || [];
+  const profiles = result.scoring?.profiles || [];
+  state.selectedId = flagged[0]?.entity_id || profiles[0]?.entity_id || null;
+  state.reportUrl = null;
 }
 
 async function runDemo() {
   try {
-    setLoading("Running");
+    setLoading();
     el("mappingPanel").hidden = true;
     const result = await getJson("/api/demo");
-    state.result = result;
-    state.selectedId = result.scoring.flagged_profiles[0]?.entity_id || result.scoring.profiles[0]?.entity_id || null;
+    recordResult(result);
+    switchTab("profiles");
     render();
+    showToast("Synthetic audit complete");
   } catch (error) {
     alert(`Pipeline failed: ${error.message}`);
   }
@@ -94,10 +177,11 @@ async function runBenchmark() {
   const citizens = Math.max(1, Math.min(5000, Number.isFinite(requested) ? requested : 500));
   el("benchmarkCitizens").value = String(citizens);
   try {
-    setLoading("Benchmarking");
+    setLoading();
     el("mappingPanel").hidden = true;
     const summary = await getJson(`/api/benchmark?citizens=${encodeURIComponent(citizens)}`);
     renderBenchmark(summary);
+    showToast(`Benchmark complete: ${summary.throughput_records_per_second} records/s`);
   } catch (error) {
     alert(`Benchmark failed: ${error.message}`);
   }
@@ -106,18 +190,19 @@ async function runBenchmark() {
 async function runUploadedFiles() {
   const names = Object.keys(state.uploaded);
   if (!names.length) {
-    alert("Load one or more CSV files first.");
+    showToast("Load one or more CSV files first.");
     return;
   }
   try {
-    setLoading("Running");
+    setLoading();
     const result = await postJson("/api/run", {
       datasets: state.uploaded,
       mappings: buildMappingsPayload(),
     });
-    state.result = result;
-    state.selectedId = result.scoring.flagged_profiles[0]?.entity_id || result.scoring.profiles[0]?.entity_id || null;
+    recordResult(result);
+    switchTab("profiles");
     render();
+    showToast("Uploaded files processed");
   } catch (error) {
     alert(`Pipeline failed: ${error.message}`);
   }
@@ -126,9 +211,8 @@ async function runUploadedFiles() {
 async function handleFiles(event) {
   const files = Array.from(event.target.files || []);
   if (!files.length) return;
-
   try {
-    setLoading("Profiling");
+    setPipelineStatus("ingest", "Profiling");
     const loaded = {};
     for (const file of files) {
       const text = await file.text();
@@ -139,16 +223,19 @@ async function handleFiles(event) {
     state.uploadProfiles = response.profiles || [];
     initializeMappings(state.uploadProfiles);
     renderMappingReview();
+    renderUploadedFiles();
     state.result = null;
     state.selectedId = null;
-    el("erStatus").textContent = "Review mappings";
-    el("graphStatus").textContent = `${Object.keys(state.uploaded).length} CSV loaded`;
+    el("resolveStatus").textContent = `${Object.keys(state.uploaded).length} CSV loaded`;
     el("scoreStatus").textContent = "Ready to run";
     el("exportReport").disabled = true;
-    event.target.value = "";
+    switchTab("overview");
+    renderOverview();
+    showToast("CSV profiled; review mappings before running");
   } catch (error) {
     alert(`CSV profiling failed: ${error.message}`);
   }
+  event.target.value = "";
 }
 
 function parseCsv(text) {
@@ -156,7 +243,6 @@ function parseCsv(text) {
   let current = "";
   let row = [];
   let inQuotes = false;
-
   for (let i = 0; i < text.length; i += 1) {
     const char = text[i];
     const next = text[i + 1];
@@ -178,12 +264,10 @@ function parseCsv(text) {
       current += char;
     }
   }
-
   if (current.length || row.length) {
     row.push(current.trim());
     if (row.some((cell) => cell.length)) rows.push(row);
   }
-
   const headers = rows.shift() || [];
   return rows.map((cells, index) => {
     const item = { source_row_id: String(index + 1) };
@@ -198,482 +282,1200 @@ function initializeMappings(profiles) {
   state.mappings = {};
   profiles.forEach((profile) => {
     state.mappings[profile.name] = {
-      _kind: profile.detected_kind || "generic",
-      ...(profile.mapping || {}),
+      detected_kind: profile.detected_kind,
+      fields: {},
     };
+    const fieldMap = profile.mapping || {};
+    Object.entries(fieldMap).forEach(([canonical, source]) => {
+      state.mappings[profile.name].fields[canonical] = source;
+    });
   });
 }
 
 function buildMappingsPayload() {
   const payload = {};
-  state.uploadProfiles.forEach((profile) => {
-    payload[profile.name] = { ...(state.mappings[profile.name] || {}) };
+  Object.entries(state.mappings).forEach(([name, data]) => {
+    payload[name] = {
+      _kind: data.detected_kind,
+      ...data.fields,
+    };
   });
   return payload;
 }
 
 function renderMappingReview() {
+  const container = el("mappingReview");
   const panel = el("mappingPanel");
-  const profiles = state.uploadProfiles;
-  panel.hidden = !profiles.length;
-  el("mappingCount").textContent = String(profiles.length);
-  el("mappingReview").innerHTML = profiles.map((profile, index) => renderMappingDataset(profile, index)).join("");
+  if (!state.uploadProfiles.length) {
+    panel.hidden = true;
+    container.innerHTML = "";
+    return;
+  }
+  panel.hidden = false;
+  el("mappingCount").textContent = String(state.uploadProfiles.length);
 
-  document.querySelectorAll("[data-kind-index]").forEach((select) => {
-    select.addEventListener("change", () => {
-      const profile = state.uploadProfiles[Number(select.dataset.kindIndex)];
-      state.mappings[profile.name] = {
-        ...(state.mappings[profile.name] || {}),
-        _kind: select.value,
-      };
-      renderMappingReview();
-    });
-  });
-
-  document.querySelectorAll("[data-map-index]").forEach((select) => {
-    select.addEventListener("change", () => {
-      const profile = state.uploadProfiles[Number(select.dataset.mapIndex)];
-      const mapping = state.mappings[profile.name] || { _kind: profile.detected_kind || "generic" };
-      mapping[select.dataset.mapField] = select.value;
-      state.mappings[profile.name] = mapping;
-    });
-  });
-}
-
-function renderMappingDataset(profile, index) {
-  const mapping = state.mappings[profile.name] || { _kind: profile.detected_kind || "generic" };
-  const kind = mapping._kind || profile.detected_kind || "generic";
-  const fields = KIND_FIELDS[kind] || KIND_FIELDS.generic;
-  const fieldRows = fields
-    .map(
-      (field) => `
-        <label class="mapping-field">
-          <span>${safe(FIELD_LABELS[field] || field)}</span>
-          <select data-map-index="${index}" data-map-field="${safe(field)}">
-            ${columnOptions(profile.columns, mapping[field])}
-          </select>
-        </label>
-      `,
-    )
+  container.innerHTML = state.uploadProfiles
+    .map((profile) => {
+      const kind = state.mappings[profile.name]?.detected_kind || profile.detected_kind || "generic";
+      const fieldsHtml = (KIND_FIELDS[kind] || KIND_FIELDS.generic)
+        .map((canonical) => {
+          const current = state.mappings[profile.name]?.fields?.[canonical] || "";
+          const options = profile.columns
+            .map((col) => `<option value="${safe(col)}" ${col === current ? "selected" : ""}>${safe(col)}</option>`)
+            .join("");
+          return `
+            <div class="mapping-field">
+              <label for="map-${safe(profile.name)}-${canonical}">${FIELD_LABELS[canonical] || canonical}</label>
+              <select id="map-${safe(profile.name)}-${canonical}" data-dataset="${safe(profile.name)}" data-field="${canonical}">
+                <option value="">— ignore —</option>
+                ${options}
+              </select>
+            </div>
+          `;
+        })
+        .join("");
+      return `
+        <div class="mapping-dataset">
+          <h3>${safe(profile.name)} <span class="kind-badge">${safe(kind)}</span></h3>
+          <div class="mapping-fields">${fieldsHtml}</div>
+        </div>
+      `;
+    })
     .join("");
 
-  return `
-    <article class="mapping-dataset">
-      <div class="mapping-summary">
-        <div>
-          <strong>${safe(profile.name)}</strong>
-          <small>${safe(profile.row_count)} rows | detected as ${safe(profile.detected_kind)}</small>
-        </div>
-        <label>
-          <span>Dataset type</span>
-          <select data-kind-index="${index}">
-            ${KIND_OPTIONS.map((option) => `<option value="${option}" ${option === kind ? "selected" : ""}>${option}</option>`).join("")}
-          </select>
-        </label>
-      </div>
-      <div class="mapping-fields">${fieldRows}</div>
-    </article>
-  `;
-}
-
-function columnOptions(columns, selected) {
-  const options = [`<option value="">Not mapped</option>`];
-  columns.forEach((column) => {
-    options.push(`<option value="${safe(column)}" ${column === selected ? "selected" : ""}>${safe(column)}</option>`);
+  container.querySelectorAll("select").forEach((select) => {
+    select.addEventListener("change", (e) => {
+      const dataset = e.target.dataset.dataset;
+      const field = e.target.dataset.field;
+      if (!state.mappings[dataset]) state.mappings[dataset] = { fields: {} };
+      state.mappings[dataset].fields[field] = e.target.value;
+    });
   });
-  return options.join("");
 }
 
-function render() {
-  const result = state.result;
-  if (!result) return;
-  el("erStatus").textContent = "Unified IDs";
-  el("graphStatus").textContent = `${result.graph.summary.nodes} nodes`;
-  el("scoreStatus").textContent = `${result.scoring.summary.flagged} flagged`;
-  el("exportReport").disabled = false;
-  renderMetrics(result);
-  renderProfiles(result);
-  renderSelected(result);
-  renderProfilesMeta(result.profiles);
+function renderUploadedFiles() {
+  const container = el("uploadedFiles");
+  const names = Object.keys(state.uploaded);
+  if (!names.length) {
+    container.innerHTML = "";
+    return;
+  }
+  container.innerHTML = names
+    .map((name) => `<span class="file-tag">${safe(name)} <small>(${state.uploaded[name].length} rows)</small></span>`)
+    .join("");
 }
 
 function renderBenchmark(summary) {
-  state.result = null;
-  state.selectedId = null;
-  el("erStatus").textContent = `${summary.entity_count} entities`;
-  el("graphStatus").textContent = `${summary.graph_summary.nodes} nodes`;
-  el("scoreStatus").textContent = `${summary.throughput_records_per_second} rec/s`;
-  el("exportReport").disabled = true;
-  el("metrics").innerHTML = [
-    metric("Synthetic citizens", summary.citizens),
-    metric("Canonical records", summary.canonical_record_count),
-    metric("Unified entities", summary.entity_count),
-    metric("Candidate pairs", summary.resolution_runtime_stats.candidate_pairs_after_blocking),
-    metric("Blocking reduction", `${summary.resolution_runtime_stats.blocking_reduction_pct}%`),
-    metric("Throughput", `${summary.throughput_records_per_second} rec/s`),
-  ].join("");
-  el("queueCount").textContent = "0";
-  el("profileRows").innerHTML = '<tr><td colspan="3">Benchmark summary only; no profile payload returned.</td></tr>';
-  el("graphTitle").textContent = "Benchmark summary";
-  el("selectedScore").textContent = String(summary.scoring_summary.flagged);
-  el("graphSvg").replaceChildren();
-  el("detailTitle").textContent = "Benchmark complete";
-  el("riskLevel").textContent = "summary";
-  el("riskLevel").className = "risk low";
-  el("explanation").textContent = `Processed ${summary.canonical_record_count} canonical records for ${summary.citizens} synthetic citizens in ${summary.timing_ms.total} ms. Ground-truth pairwise metrics are skipped in benchmark mode to avoid quadratic validation cost.`;
-  el("scoreBreakdown").innerHTML = Object.entries(summary.timing_ms)
-    .map(
-      ([label, value]) => `
-        <div class="bar-row">
-          <strong>${safe(label.replaceAll("_", " "))}</strong>
-          <div class="bar-track"><div class="bar-fill" style="width:${Math.min(100, Number(value) / Math.max(summary.timing_ms.total, 1) * 100)}%"></div></div>
-          <span>${safe(value)} ms</span>
-        </div>
-      `,
-    )
-    .join("");
-  el("confidencePanel").innerHTML = `<p class="empty">Benchmark mode returns aggregate throughput, graph, and scoring counts only.</p>`;
-  el("matchEvidence").innerHTML = `<div class="match-block"><h3>Scalability notes</h3><p>${safe(summary.scalability_notes.thirty_million)}</p></div>`;
-  el("sourceRows").innerHTML = '<p class="empty">No row-level payload is returned for benchmark mode.</p>';
-  renderProfilesMeta([
-    {
-      name: "benchmark",
-      row_count: summary.canonical_record_count,
-      detected_kind: "synthetic aggregate",
-      mapping: summary.resolution_runtime_stats,
-    },
-  ]);
+  setPipelineStatus("score", "Done");
+  document.querySelectorAll(".metric-card").forEach((card) => card.classList.remove("loading"));
+  el("metricRecords").textContent = String(summary.canonical_record_count || 0);
+  el("metricEntities").textContent = String(summary.entity_count || 0);
+  el("metricFlagged").textContent = "—";
+  el("metricConfidence").textContent = "—";
+  el("metricTopTier").textContent = "—";
+  renderTierChart([]);
+  el("datasetProfiles").innerHTML = `<p class="empty-state">Benchmark mode skipped dataset profiling.</p>`;
+  switchTab("overview");
 }
 
-function metric(label, value) {
-  return `<div class="metric"><span>${safe(label)}</span><strong>${safe(value)}</strong></div>`;
+function getProfiles() {
+  return state.result?.scoring?.profiles || [];
 }
 
-function renderMetrics(result) {
-  const er = result.resolution.resolution_metrics;
-  const stats = result.resolution.runtime_stats;
-  const scoring = result.scoring.summary;
-  el("metrics").innerHTML = [
-    metric("Canonical records", result.canonical_record_count),
-    metric("Unified entities", result.resolution.entities.length),
-    metric("Flagged", scoring.flagged),
-    metric("ER F1", er.available ? er.f1 : "n/a"),
-    metric("Blocking reduction", `${stats.blocking_reduction_pct}%`),
-    metric("Total runtime", `${result.timing_ms.total} ms`),
-  ].join("");
+function getFlaggedProfiles() {
+  return state.result?.scoring?.flagged_profiles || [];
 }
 
-function renderProfiles(result) {
-  const profiles = result.scoring.flagged_profiles.length ? result.scoring.flagged_profiles : result.scoring.profiles;
-  el("queueCount").textContent = String(profiles.length);
-  el("profileRows").innerHTML = profiles
-    .map(
-      (profile) => `
-        <tr data-id="${safe(profile.entity_id)}" class="${profile.entity_id === state.selectedId ? "selected" : ""}">
-          <td><strong>${safe(profile.name)}</strong><br><small>${safe(profile.entity_id)}</small></td>
-          <td><span class="risk ${safe(profile.risk_level)}">${safe(profile.risk_level)}</span></td>
-          <td><strong>${safe(profile.deviation_score)}</strong></td>
-        </tr>
-      `,
-    )
-    .join("");
+function getSelectedProfile() {
+  return getProfiles().find((p) => p.entity_id === state.selectedId);
+}
 
-  document.querySelectorAll("#profileRows tr").forEach((row) => {
-    row.addEventListener("click", () => {
-      state.selectedId = row.dataset.id;
-      renderSelected(state.result);
-      renderProfiles(state.result);
-    });
+function getGraphData() {
+  return state.result?.graph || { nodes: [], edges: [] };
+}
+
+function switchTab(tabId) {
+  state.activeTab = tabId;
+  const tabs = ["overview", "profiles", "graph"];
+  tabs.forEach((id) => {
+    const btn = el(`tab${id.charAt(0).toUpperCase() + id.slice(1)}`);
+    const panel = el(`panel${id.charAt(0).toUpperCase() + id.slice(1)}`);
+    const isActive = id === tabId;
+    btn.classList.toggle("active", isActive);
+    btn.setAttribute("aria-selected", String(isActive));
+    btn.tabIndex = isActive ? 0 : -1;
+    panel.classList.toggle("active", isActive);
+    panel.hidden = !isActive;
   });
+  if (tabId === "profiles") renderProfiles();
+  if (tabId === "graph") renderGraph();
 }
 
-function selectedProfile(result) {
-  return result.scoring.profiles.find((profile) => profile.entity_id === state.selectedId) || result.scoring.profiles[0];
+function render() {
+  renderOverview();
+  if (state.activeTab === "profiles") renderProfiles();
+  if (state.activeTab === "graph") renderGraph();
 }
 
-function renderSelected(result) {
-  const profile = selectedProfile(result);
-  if (!profile) return;
-  el("graphTitle").textContent = profile.name;
-  el("detailTitle").textContent = profile.name;
-  el("selectedScore").textContent = String(profile.deviation_score);
-  el("riskLevel").textContent = profile.risk_level;
-  el("riskLevel").className = `risk ${profile.risk_level}`;
-  el("explanation").textContent = profile.explanation;
-  renderBreakdown(profile);
-  renderConfidencePanel(result, profile);
-  renderSourceRows(profile);
-  renderGraph(result, profile);
+function renderOverview() {
+  const result = state.result;
+  const profiles = getProfiles();
+  const flagged = getFlaggedProfiles();
+
+  if (!result) {
+    document.querySelectorAll(".metric-card").forEach((card) => card.classList.add("loading"));
+    return;
+  }
+
+  document.querySelectorAll(".metric-card").forEach((card) => card.classList.remove("loading"));
+  setPipelineStatus("score", "Done");
+
+  const canonicalCount = result.canonical_record_count ?? 0;
+  const entityCount = result.resolution?.entities?.length ?? 0;
+  const avgConfidence = profiles.length
+    ? (profiles.reduce((sum, p) => sum + (p.scoring_confidence || 0), 0) / profiles.length).toFixed(1)
+    : "—";
+  const tierCounts = {};
+  profiles.forEach((p) => {
+    tierCounts[p.risk_tier] = (tierCounts[p.risk_tier] || 0) + 1;
+  });
+  const topTier = TIER_ORDER.find((t) => tierCounts[t] && tierCounts[t] > 0) || "—";
+
+  el("metricRecords").textContent = String(canonicalCount);
+  el("metricEntities").textContent = String(entityCount);
+  el("metricFlagged").textContent = String(flagged.length);
+  el("metricConfidence").textContent = avgConfidence === "—" ? avgConfidence : `${avgConfidence}%`;
+  el("metricTopTier").textContent = TIER_LABELS[topTier] || topTier;
+
+  renderTierChart(profiles);
+  renderDatasetProfiles();
+  renderUploadedFiles();
+  el("exportReport").disabled = !result;
 }
 
-function renderBreakdown(profile) {
-  const rows = [
-    ["Direct score", profile.direct_score],
-    ["Associate score", profile.associate_proxy_score],
-    ...Object.entries(profile.score_components).map(([key, value]) => [key.replaceAll("_", " "), value]),
-  ];
-  el("scoreBreakdown").innerHTML = rows
-    .map(([label, value]) => {
-      const width = Math.max(0, Math.min(100, Number(value)));
+function renderTierChart(profiles) {
+  const container = el("tierChart");
+  container.innerHTML = "";
+  if (!profiles.length) {
+    container.innerHTML = `<p class="empty-state">No profiles to display.</p>`;
+    return;
+  }
+  const counts = { critical: 0, high: 0, medium: 0, low: 0 };
+  profiles.forEach((p) => {
+    counts[p.risk_tier] = (counts[p.risk_tier] || 0) + 1;
+  });
+  const data = TIER_ORDER.map((tier) => ({ tier, count: counts[tier] || 0, label: TIER_LABELS[tier] })).filter(
+    (d) => d.count > 0,
+  );
+  const total = profiles.length;
+
+  const margin = { top: 10, right: 16, bottom: 32, left: 64 };
+  const width = container.clientWidth || 400;
+  const height = 220;
+  const innerW = width - margin.left - margin.right;
+  const innerH = height - margin.top - margin.bottom;
+
+  const svg = d3
+    .select(container)
+    .append("svg")
+    .attr("viewBox", `0 0 ${width} ${height}`)
+    .attr("preserveAspectRatio", "xMidYMid meet");
+
+  const colorScale = d3.scaleOrdinal().domain(TIER_ORDER).range(["#a64b2a", "#c14528", "#c88a2a", "#d4b876", "#3d6b52"]);
+
+  const x = d3.scaleLinear().domain([0, total]).nice().range([0, innerW]);
+  const y = d3
+    .scaleBand()
+    .domain(data.map((d) => d.label))
+    .range([0, innerH])
+    .padding(0.25);
+
+  const g = svg.append("g").attr("transform", `translate(${margin.left},${margin.top})`);
+
+  g.selectAll("rect.bar")
+    .data(data)
+    .join("rect")
+    .attr("class", "bar")
+    .attr("y", (d) => y(d.label))
+    .attr("height", y.bandwidth())
+    .attr("x", 0)
+    .attr("width", 0)
+    .attr("fill", (d) => colorScale(d.tier))
+    .attr("rx", 4)
+    .transition()
+    .duration(250)
+    .attr("width", (d) => x(d.count));
+
+  g.selectAll("text.value")
+    .data(data)
+    .join("text")
+    .attr("class", "value")
+    .attr("x", (d) => x(d.count) + 6)
+    .attr("y", (d) => y(d.label) + y.bandwidth() / 2)
+    .attr("dy", "0.35em")
+    .style("font-family", "JetBrains Mono, monospace")
+    .style("font-size", "0.8125rem")
+    .style("font-weight", "600")
+    .style("fill", "#1e1e24")
+    .text((d) => `${d.count} (${((d.count / total) * 100).toFixed(0)}%)`);
+
+  g.append("g").attr("transform", `translate(0,${innerH})`).call(d3.axisBottom(x).ticks(5).tickSizeOuter(0));
+  g.append("g").call(d3.axisLeft(y).tickSizeOuter(0));
+
+  g.selectAll(".domain, .tick line").style("stroke", "#dcd6cc");
+  g.selectAll(".tick text").style("fill", "#5e5c58").style("font-family", "Source Sans 3, sans-serif");
+}
+
+function renderDatasetProfiles() {
+  const container = el("datasetProfiles");
+  const profiles = state.result?.profiles || state.uploadProfiles || [];
+  if (!profiles.length) {
+    container.innerHTML = `<p class="empty-state">Run an audit or upload files to see dataset profiles.</p>`;
+    return;
+  }
+  container.innerHTML = profiles
+    .map((p) => {
+      const cols = p.columns?.length ?? 0;
+      const mapped = Object.entries(p.mapping || {})
+        .map(([k, v]) => `${FIELD_LABELS[k] || k}: ${safe(v)}`)
+        .join(", ");
       return `
-        <div class="bar-row">
-          <strong>${safe(label)}</strong>
-          <div class="bar-track"><div class="bar-fill" style="width:${width}%"></div></div>
-          <span>${safe(value)}</span>
+        <div class="dataset-profile">
+          <h3>${safe(p.name)}</h3>
+          <span class="hint">${safe(p.detected_kind)} · ${p.row_count ?? "?"} rows · ${cols} columns</span>
+          <p class="hint">${mapped || "Auto-detected mapping"}</p>
         </div>
       `;
     })
     .join("");
 }
 
-function renderConfidencePanel(result, profile) {
-  const flags = profile.uncertainty_flags || [];
-  const possible = profile.possible_matches || [];
-  const confirmed = confirmedMatchesForProfile(result, profile);
-  const flagChips = flags.length
-    ? flags.map((flag) => `<span class="chip warning">${safe(flag)}</span>`).join("")
-    : '<span class="chip muted">No uncertainty flags</span>';
-
-  el("confidencePanel").innerHTML = `
-    <div class="confidence-stats">
-      ${confidenceStat("Scoring confidence", profile.scoring_confidence)}
-      ${confidenceStat("Evidence coverage", profile.evidence_coverage)}
-      ${confidenceStat("Risk basis", profile.risk_basis)}
-    </div>
-    <div class="chip-section">
-      <strong>Uncertainty flags</strong>
-      <div class="chip-list">${flagChips}</div>
-    </div>
-  `;
-
-  el("matchEvidence").innerHTML = `
-    <div class="match-block">
-      <h3>Confirmed match confidence</h3>
-      ${confirmed.length ? confirmed.map(renderConfirmedMatch).join("") : '<p class="empty compact">No cross-row confirmed match evidence for this profile.</p>'}
-    </div>
-    <div class="match-block">
-      <h3>Possible identity matches</h3>
-      ${possible.length ? possible.map(renderPossibleMatch).join("") : '<p class="empty compact">No unresolved possible matches.</p>'}
-    </div>
-  `;
+function renderProfiles() {
+  renderProfileQueue();
+  renderCaseFile();
 }
 
-function confidenceStat(label, value) {
-  const numeric = Number(value);
-  const hasBar = Number.isFinite(numeric);
-  return `
-    <div class="confidence-stat">
-      <span>${safe(label)}</span>
-      <strong>${safe(value)}</strong>
-      ${hasBar ? `<div class="mini-track"><div style="width:${Math.max(0, Math.min(100, numeric))}%"></div></div>` : ""}
-    </div>
-  `;
+function renderProfileQueue() {
+  const tbody = el("profileRows");
+  const search = (el("profileSearch").value || "").toLowerCase();
+  const activeTier = document.querySelector('.filter-chips .chip.active')?.dataset.tier || "all";
+  const profiles = getFlaggedProfiles();
+
+  const filtered = profiles.filter((p) => {
+    const matchesSearch =
+      !search ||
+      (p.name || "").toLowerCase().includes(search) ||
+      (p.entity_id || "").toLowerCase().includes(search);
+    const matchesTier = activeTier === "all" || p.risk_tier === activeTier;
+    return matchesSearch && matchesTier;
+  });
+
+  el("queueCount").textContent = String(filtered.length);
+
+  tbody.innerHTML = filtered
+    .map((p) => {
+      const selectedClass = p.entity_id === state.selectedId ? "selected" : "";
+      return `
+        <tr class="${selectedClass}" data-id="${safe(p.entity_id)}">
+          <td>
+            <div class="queue-name">${safe(p.name || p.entity_id)}</div>
+            <div class="queue-id">${safe(p.entity_id)}</div>
+          </td>
+          <td><span class="risk-chip ${safe(tierClass(p.risk_tier))}">${TIER_LABELS[p.risk_tier] || p.risk_tier}</span></td>
+          <td class="numeric">${(p.deviation_score ?? 0).toFixed(1)}</td>
+          <td class="numeric">${((p.aggregate?.lli_ratio || 0)).toFixed(1)}x</td>
+        </tr>
+      `;
+    })
+    .join("");
+
+  tbody.querySelectorAll("tr").forEach((row) => {
+    row.addEventListener("click", () => {
+      state.selectedId = row.dataset.id;
+      renderProfiles();
+    });
+  });
 }
 
-function confirmedMatchesForProfile(result, profile) {
-  const sourceIds = new Set(profile.source_record_ids || []);
-  return (result.resolution.matches || [])
-    .filter((match) => sourceIds.has(match.left) || sourceIds.has(match.right))
-    .sort((a, b) => b.confidence - a.confidence)
-    .slice(0, 8);
-}
-
-function renderConfirmedMatch(match) {
-  return `
-    <div class="match-row">
-      <div>
-        <strong>${safe(match.left)} -> ${safe(match.right)}</strong>
-        <small>${safe((match.reasons || []).join(", "))}</small>
+function renderCaseFile() {
+  const container = el("caseFile");
+  const profile = getSelectedProfile();
+  if (!profile) {
+    container.innerHTML = `
+      <div class="case-file-empty">
+        <h2>Run the pipeline to open a case file</h2>
+        <p>Use <strong>Run synthetic audit</strong> or upload CSVs to begin.</p>
       </div>
-      <span>${safe(match.confidence)}%</span>
-    </div>
-  `;
-}
-
-function renderPossibleMatch(match) {
-  return `
-    <div class="match-row possible">
-      <div>
-        <strong>${safe(match.other_entity_name || match.other_entity_id || match.other_record)}</strong>
-        <small>${safe(match.this_record)} -> ${safe(match.other_record)} | ${safe((match.reasons || []).join(", "))}</small>
-      </div>
-      <span>${safe(match.confidence)}%</span>
-    </div>
-  `;
-}
-
-function renderSourceRows(profile) {
-  if (!profile.source_rows.length) {
-    el("sourceRows").innerHTML = '<p class="empty">No source rows for this entity.</p>';
+    `;
     return;
   }
-  el("sourceRows").innerHTML = profile.source_rows
-    .map(
-      (row) => `
-        <div class="source-row">
-          <strong>${safe(row.dataset)} row ${safe(row.row_id)} (${safe(row.record_type)})</strong>
-          <div class="raw">${safe(JSON.stringify(row.raw, null, 2))}</div>
+
+  const agg = profile.aggregate || {};
+  const lliRatio = agg.lli_ratio || 0;
+  const lliClass = lliRatio > 3 ? "danger" : lliRatio > 1.5 ? "warning" : "positive";
+
+  container.innerHTML = `
+    <header class="case-header">
+      <div class="case-header-row">
+        <div>
+          <p class="eyebrow">Case file</p>
+          <h2 class="case-name">${safe(profile.name || profile.entity_id)}</h2>
+          <div class="case-meta">
+            <span>ID: ${safe(profile.entity_id)}</span>
+            <span>Sources: ${(profile.source_record_ids || []).length}</span>
+            <span>Confidence: ${(profile.scoring_confidence ?? 0).toFixed(1)}%</span>
+          </div>
         </div>
-      `,
-    )
+        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+          <span class="risk-chip ${safe(tierClass(profile.risk_tier))}">${TIER_LABELS[profile.risk_tier] || profile.risk_tier}</span>
+          <button class="btn btn-secondary" id="investigateInGraph">Investigate in graph</button>
+        </div>
+      </div>
+      <div class="score-grid">
+        <div class="score-item">
+          <span class="score-label">Deviation score</span>
+          <span class="score-value ${safe(tierClass(profile.risk_tier))}">${(profile.deviation_score ?? 0).toFixed(1)}</span>
+        </div>
+        <div class="score-item">
+          <span class="score-label">Direct risk</span>
+          <span class="score-value">${(profile.direct_score ?? 0).toFixed(1)}</span>
+        </div>
+        <div class="score-item">
+          <span class="score-label">LLI ratio</span>
+          <span class="score-value ${lliClass}">${lliRatio.toFixed(1)}x</span>
+        </div>
+        <div class="score-item">
+          <span class="score-label">Asset events</span>
+          <span class="score-value">${Math.round(agg.asset_event_count || 0)}</span>
+        </div>
+        <div class="score-item">
+          <span class="score-label">Vehicle value</span>
+          <span class="score-value">${formatPKR(agg.estimated_vehicle_value || 0)}</span>
+        </div>
+        <div class="score-item">
+          <span class="score-label">Property value</span>
+          <span class="score-value">${formatPKR(agg.estimated_property_value || 0)}</span>
+        </div>
+      </div>
+    </header>
+
+    <section class="case-section">
+      <div class="case-section-header"><h3>Direct reasons</h3></div>
+      <div class="case-section-body">
+        <ul class="reasons-list">
+          ${(profile.direct_reasons || []).map((r) => `<li>${safe(r)}</li>`).join("") || "<li>No direct reasons recorded.</li>"}
+        </ul>
+      </div>
+    </section>
+
+    <section class="case-section">
+      <div class="case-section-header"><h3>Score breakdown</h3></div>
+      <div class="case-section-body chart-container" id="scoreComponentsChart"></div>
+    </section>
+
+    <section class="case-section">
+      <div class="case-section-header"><h3>Asset timeline</h3></div>
+      <div class="case-section-body chart-container" id="assetTimelineChart"></div>
+    </section>
+
+    <section class="case-section">
+      <div class="case-section-header"><h3>Evidence signals</h3></div>
+      <div class="case-section-body">
+        <div class="overview-grid" style="grid-template-columns:repeat(auto-fit,minmax(280px,1fr));">
+          <div>
+            <p class="eyebrow">Source mix</p>
+            <div id="sourceMixChart" class="chart-container small"></div>
+          </div>
+          <div>
+            <p class="eyebrow">Benford first digits</p>
+            <div id="benfordChart" class="chart-container small"></div>
+          </div>
+          <div>
+            <p class="eyebrow">Geography</p>
+            <div id="geoChips" class="geo-chips"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="case-section">
+      <div class="case-section-header"><h3>Ego network</h3></div>
+      <div class="case-section-body chart-container" id="egoGraphChart"></div>
+    </section>
+
+    <section class="case-section">
+      <div class="case-section-header"><h3>Source rows</h3></div>
+      <div class="case-section-body">
+        <div class="source-rows" id="caseSourceRows"></div>
+      </div>
+    </section>
+  `;
+
+  el("investigateInGraph").addEventListener("click", () => {
+    switchTab("graph");
+    state.graph.selectedNodeId = profile.entity_id;
+    renderGraph();
+  });
+
+  renderScoreComponentsChart(profile);
+  renderAssetTimelineChart(profile);
+  renderSourceMixChart(profile);
+  renderBenfordChart(profile);
+  renderGeoChips(profile);
+  renderEgoGraph(profile);
+  renderCaseSourceRows(profile);
+}
+
+function renderScoreComponentsChart(profile) {
+  const container = el("scoreComponentsChart");
+  const components = profile.score_components || {};
+  const data = Object.entries(components)
+    .filter(([, value]) => value > 0)
+    .map(([key, value]) => ({ key: key.replace(/_/g, " "), value }))
+    .sort((a, b) => b.value - a.value);
+
+  if (!data.length) {
+    container.innerHTML = `<p class="empty-state">No score components available.</p>`;
+    return;
+  }
+
+  drawHorizontalBarChart(container, data, { valueFormat: (d) => d.toFixed(1), color: "#1a2b4a" });
+}
+
+function renderAssetTimelineChart(profile) {
+  const container = el("assetTimelineChart");
+  const records = profile.source_rows || [];
+  const events = [];
+  records.forEach((row) => {
+    const raw = row.raw || {};
+    const type = row.record_type;
+    if (type === "property" && raw.transfer_date) {
+      const year = parseInt(String(raw.transfer_date).slice(0, 4), 10);
+      if (year) events.push({ year, label: "Property", value: Number(raw.property_value || 0) });
+    }
+    if (type === "vehicle" && raw.registration_year) {
+      const year = Number(raw.registration_year);
+      if (year) events.push({ year, label: "Vehicle", value: Number(raw.engine_capacity_cc || 0) * 1000 });
+    }
+  });
+
+  if (!events.length) {
+    container.innerHTML = `<p class="empty-state">No dated asset events for this entity.</p>`;
+    return;
+  }
+
+  drawTimelineChart(container, events);
+}
+
+function renderSourceMixChart(profile) {
+  const container = el("sourceMixChart");
+  const records = profile.source_rows || [];
+  const counts = {};
+  records.forEach((r) => {
+    counts[r.record_type] = (counts[r.record_type] || 0) + 1;
+  });
+  const data = Object.entries(counts).map(([type, count]) => ({ type, count }));
+  if (!data.length) {
+    container.innerHTML = `<p class="empty-state">No source rows.</p>`;
+    return;
+  }
+  drawDonutChart(container, data);
+}
+
+function renderBenfordChart(profile) {
+  const container = el("benfordChart");
+  const records = profile.source_rows || [];
+  const values = records
+    .filter((r) => r.record_type === "tax")
+    .flatMap((r) => [r.raw?.declared_income_pkr, r.raw?.tax_paid_pkr])
+    .filter(Boolean);
+
+  if (values.length < 10) {
+    container.innerHTML = `<p class="empty-state">Not enough numeric records for Benford analysis.</p>`;
+    return;
+  }
+
+  const digitCounts = {};
+  for (let d = 1; d <= 9; d += 1) digitCounts[d] = 0;
+  values.forEach((v) => {
+    const text = String(v).replace(/[^0-9]/g, "");
+    for (const ch of text) {
+      if (ch !== "0") {
+        digitCounts[ch] = (digitCounts[ch] || 0) + 1;
+        break;
+      }
+    }
+  });
+  const total = Object.values(digitCounts).reduce((a, b) => a + b, 0);
+  if (total < 5) {
+    container.innerHTML = `<p class="empty-state">Not enough first digits.</p>`;
+    return;
+  }
+  const expected = [0.301, 0.176, 0.125, 0.097, 0.079, 0.067, 0.058, 0.051, 0.046];
+  const data = Array.from({ length: 9 }, (_, i) => ({
+    digit: String(i + 1),
+    observed: total ? digitCounts[String(i + 1)] / total : 0,
+    expected: expected[i],
+  }));
+  drawGroupedBarChart(container, data);
+}
+
+function renderGeoChips(profile) {
+  const container = el("geoChips");
+  const records = profile.source_rows || [];
+  const provinces = new Set();
+  const districts = new Set();
+  records.forEach((r) => {
+    const raw = r.raw || {};
+    if (raw.nic_province) provinces.add(raw.nic_province);
+    if (raw.nic_district) districts.add(raw.nic_district);
+  });
+  if (!provinces.size && !districts.size) {
+    container.innerHTML = `<p class="empty-state">No geocoded CNIC data.</p>`;
+    return;
+  }
+  const chips = [
+    ...Array.from(provinces).map((p) => `<span class="geo-chip">${safe(p)}</span>`),
+    ...Array.from(districts).map((d) => `<span class="geo-chip">${safe(d)}</span>`),
+  ];
+  container.innerHTML = chips.join("");
+}
+
+function renderEgoGraph(profile) {
+  const container = el("egoGraphChart");
+  const graph = getGraphData();
+  if (!graph.nodes.length) {
+    container.innerHTML = `<p class="empty-state">No graph data.</p>`;
+    return;
+  }
+  const nodeIds = new Set([profile.entity_id]);
+  graph.edges.forEach((e) => {
+    if (e.source === profile.entity_id || e.target === profile.entity_id) {
+      nodeIds.add(typeof e.source === "object" ? e.source.id : e.source);
+      nodeIds.add(typeof e.target === "object" ? e.target.id : e.target);
+    }
+  });
+  const egoNodes = graph.nodes.filter((n) => nodeIds.has(n.id));
+  const egoEdges = graph.edges.filter((e) => {
+    const s = typeof e.source === "object" ? e.source.id : e.source;
+    const t = typeof e.target === "object" ? e.target.id : e.target;
+    return s === profile.entity_id || t === profile.entity_id;
+  });
+  drawForceGraph(container, { nodes: egoNodes, edges: egoEdges }, { height: 260, enableZoom: false });
+}
+
+function renderCaseSourceRows(profile) {
+  const container = el("caseSourceRows");
+  const rows = profile.source_rows || [];
+  if (!rows.length) {
+    container.innerHTML = `<p class="empty-state">No source rows.</p>`;
+    return;
+  }
+  container.innerHTML = rows
+    .map((row) => {
+      const raw = row.raw || {};
+      const fields = Object.entries(raw)
+        .filter(([k]) => !k.startsWith("_"))
+        .map(([k, v]) => `<div><dt>${safe(k)}</dt><dd>${safe(v)}</dd></div>`)
+        .join("");
+      return `
+        <article class="source-row">
+          <header>
+            <span>${safe(row.dataset)}</span>
+            <span>${safe(row.record_type)}</span>
+            <span>${safe(row.row_id)}</span>
+          </header>
+          <dl>${fields}</dl>
+        </article>
+      `;
+    })
     .join("");
 }
 
-function renderProfilesMeta(profiles) {
-  el("datasetProfiles").innerHTML = profiles
-    .map(
-      (profile) => `
-        <div class="dataset-profile">
-          <strong>${safe(profile.name)}</strong>
-          <div class="raw">${safe(
-            JSON.stringify(
-              {
-                rows: profile.row_count,
-                kind: profile.detected_kind,
-                mapping: profile.mapping,
-              },
-              null,
-              2,
-            ),
-          )}</div>
+/* D3 chart helpers */
+function getChartSize(container) {
+  const width = container.clientWidth || 400;
+  return { width, height: container.clientHeight || 240 };
+}
+
+function drawHorizontalBarChart(container, data, options = {}) {
+  container.innerHTML = "";
+  const { width, height } = getChartSize(container);
+  const margin = { top: 8, right: 56, bottom: 24, left: 120 };
+  const innerW = width - margin.left - margin.right;
+  const innerH = height - margin.top - margin.bottom;
+
+  const svg = d3.select(container).append("svg").attr("width", width).attr("height", height);
+  const g = svg.append("g").attr("transform", `translate(${margin.left},${margin.top})`);
+
+  const x = d3.scaleLinear().domain([0, d3.max(data, (d) => d.value) || 1]).nice().range([0, innerW]);
+  const y = d3
+    .scaleBand()
+    .domain(data.map((d) => d.key))
+    .range([0, innerH])
+    .padding(0.2);
+
+  g.selectAll("rect")
+    .data(data)
+    .join("rect")
+    .attr("y", (d) => y(d.key))
+    .attr("height", y.bandwidth())
+    .attr("x", 0)
+    .attr("width", 0)
+    .attr("fill", options.color || "#1a2b4a")
+    .attr("rx", 4)
+    .transition()
+    .duration(250)
+    .attr("width", (d) => x(d.value));
+
+  g.selectAll("text.value")
+    .data(data)
+    .join("text")
+    .attr("x", (d) => x(d.value) + 6)
+    .attr("y", (d) => y(d.key) + y.bandwidth() / 2)
+    .attr("dy", "0.35em")
+    .style("font-family", "JetBrains Mono, monospace")
+    .style("font-size", "0.75rem")
+    .style("fill", "#1e1e24")
+    .text((d) => (options.valueFormat ? options.valueFormat(d.value) : d.value));
+
+  g.append("g").attr("transform", `translate(0,${innerH})`).call(d3.axisBottom(x).ticks(4).tickSizeOuter(0));
+  g.append("g").call(d3.axisLeft(y).tickSizeOuter(0));
+
+  g.selectAll(".domain, .tick line").style("stroke", "#dcd6cc");
+  g.selectAll(".tick text").style("fill", "#5e5c58").style("font-family", "Source Sans 3, sans-serif");
+}
+
+function drawTimelineChart(container, events) {
+  container.innerHTML = "";
+  const { width, height } = getChartSize(container);
+  const margin = { top: 16, right: 24, bottom: 32, left: 56 };
+  const innerW = width - margin.left - margin.right;
+  const innerH = height - margin.top - margin.bottom;
+
+  const svg = d3.select(container).append("svg").attr("width", width).attr("height", height);
+  const g = svg.append("g").attr("transform", `translate(${margin.left},${margin.top})`);
+
+  const years = events.map((e) => e.year);
+  const x = d3.scaleLinear().domain(d3.extent(years)).nice().range([0, innerW]);
+  const y = d3.scaleLinear().domain([0, d3.max(events, (d) => d.value) || 1]).nice().range([innerH, 0]);
+  const color = d3
+    .scaleOrdinal()
+    .domain(["Property", "Vehicle"])
+    .range(["#d4b876", "#3d6b52"]);
+
+  g.append("g").attr("transform", `translate(0,${innerH})`).call(d3.axisBottom(x).tickFormat(d3.format("d")));
+  g.append("g").call(d3.axisLeft(y).ticks(5).tickFormat((d) => formatNumber(d)));
+
+  g.selectAll(".domain, .tick line").style("stroke", "#dcd6cc");
+  g.selectAll(".tick text").style("fill", "#5e5c58").style("font-family", "Source Sans 3, sans-serif");
+
+  g.selectAll("circle")
+    .data(events)
+    .join("circle")
+    .attr("cx", (d) => x(d.year))
+    .attr("cy", (d) => y(d.value))
+    .attr("r", 6)
+    .attr("fill", (d) => color(d.label))
+    .attr("stroke", "#fdfcf9")
+    .attr("stroke-width", 2);
+
+  const line = d3
+    .line()
+    .x((d) => x(d.year))
+    .y((d) => y(d.value))
+    .curve(d3.curveMonotoneX);
+
+  g.append("path")
+    .datum(events.sort((a, b) => a.year - b.year))
+    .attr("fill", "none")
+    .attr("stroke", "#1a2b4a")
+    .attr("stroke-width", 2)
+    .attr("d", line);
+
+  const legend = svg.append("g").attr("transform", `translate(${margin.left}, 8)`);
+  color.domain().forEach((label, i) => {
+    const item = legend.append("g").attr("transform", `translate(${i * 90}, 0)`);
+    item.append("circle").attr("r", 5).attr("fill", color(label));
+    item.append("text").attr("x", 12).attr("y", 0).attr("dy", "0.35em").style("font-size", "0.75rem").text(label);
+  });
+}
+
+function drawDonutChart(container, data) {
+  container.innerHTML = "";
+  const { width, height } = getChartSize(container);
+  const radius = Math.min(width, height) / 2 - 16;
+  const svg = d3.select(container).append("svg").attr("width", width).attr("height", height);
+  const g = svg.append("g").attr("transform", `translate(${width / 2},${height / 2})`);
+
+  const color = d3.scaleOrdinal().domain(data.map((d) => d.type)).range(["#1a2b4a", "#3d6b52", "#d4b876", "#c88a2a", "#5e5c58"]);
+  const pie = d3.pie().value((d) => d.count).sort(null);
+  const arc = d3.arc().innerRadius(radius * 0.55).outerRadius(radius);
+
+  g.selectAll("path")
+    .data(pie(data))
+    .join("path")
+    .attr("d", arc)
+    .attr("fill", (d) => color(d.data.type))
+    .attr("stroke", "#fdfcf9")
+    .attr("stroke-width", 2);
+
+  const total = data.reduce((sum, d) => sum + d.count, 0);
+  g.append("text").attr("text-anchor", "middle").attr("dy", "0.35em").style("font-family", "JetBrains Mono, monospace").style("font-weight", "600").text(total);
+
+  const legend = svg.append("g").attr("transform", `translate(16, ${height - 20})`);
+  data.forEach((d, i) => {
+    const item = legend.append("g").attr("transform", `translate(${i * 80}, 0)`);
+    item.append("rect").attr("width", 10).attr("height", 10).attr("fill", color(d.type));
+    item.append("text").attr("x", 16).attr("y", 9).style("font-size", "0.75rem").text(d.type);
+  });
+}
+
+function drawGroupedBarChart(container, data) {
+  container.innerHTML = "";
+  const { width, height } = getChartSize(container);
+  const margin = { top: 16, right: 16, bottom: 32, left: 32 };
+  const innerW = width - margin.left - margin.right;
+  const innerH = height - margin.top - margin.bottom;
+
+  const svg = d3.select(container).append("svg").attr("width", width).attr("height", height);
+  const g = svg.append("g").attr("transform", `translate(${margin.left},${margin.top})`);
+
+  const x0 = d3.scaleBand().domain(data.map((d) => d.digit)).range([0, innerW]).padding(0.2);
+  const x1 = d3.scaleBand().domain(["observed", "expected"]).range([0, x0.bandwidth()]).padding(0.1);
+  const y = d3.scaleLinear().domain([0, d3.max(data, (d) => Math.max(d.observed, d.expected)) || 1]).nice().range([innerH, 0]);
+  const color = d3.scaleOrdinal().domain(["observed", "expected"]).range(["#1a2b4a", "#d4b876"]);
+
+  g.append("g").attr("transform", `translate(0,${innerH})`).call(d3.axisBottom(x0));
+  g.append("g").call(d3.axisLeft(y).ticks(5).tickFormat((d) => `${(d * 100).toFixed(0)}%`));
+
+  g.selectAll(".domain, .tick line").style("stroke", "#dcd6cc");
+  g.selectAll(".tick text").style("fill", "#5e5c58").style("font-family", "Source Sans 3, sans-serif");
+
+  const groups = g.selectAll("g.digit-group").data(data).join("g").attr("class", "digit-group").attr("transform", (d) => `translate(${x0(d.digit)},0)`);
+
+  groups
+    .selectAll("rect")
+    .data((d) => [
+      { key: "observed", value: d.observed },
+      { key: "expected", value: d.expected },
+    ])
+    .join("rect")
+    .attr("x", (d) => x1(d.key))
+    .attr("y", (d) => y(d.value))
+    .attr("width", x1.bandwidth())
+    .attr("height", (d) => innerH - y(d.value))
+    .attr("fill", (d) => color(d.key))
+    .attr("rx", 2);
+
+  const legend = svg.append("g").attr("transform", `translate(${width - 110}, 16)`);
+  ["observed", "expected"].forEach((key, i) => {
+    const item = legend.append("g").attr("transform", `translate(0, ${i * 18})`);
+    item.append("rect").attr("width", 10).attr("height", 10).attr("fill", color(key));
+    item.append("text").attr("x", 16).attr("y", 9).style("font-size", "0.75rem").text(key);
+  });
+}
+
+/* Graph investigation */
+function renderGraph() {
+  const container = el("graphCanvas");
+  container.innerHTML = "";
+  const graph = getGraphData();
+  if (!graph.nodes.length) {
+    container.innerHTML = `<p class="empty-state" style="padding:48px;">Run the pipeline to load the network.</p>`;
+    return;
+  }
+  renderGraphLegends();
+  drawForceGraph(container, graph, { height: container.clientHeight || 600, enableZoom: true });
+  renderGraphDetail();
+}
+
+function renderGraphLegends() {
+  const nodeLegend = el("nodeLegend");
+  const edgeLegend = el("edgeLegend");
+
+  nodeLegend.innerHTML = NODE_TYPES.map(
+    (t) => `
+    <label class="legend-item">
+      <input type="checkbox" value="${safe(t.key)}" checked />
+      <span class="legend-swatch ${safe(t.shape)}" style="background:${t.color}"></span>
+      <span>${safe(t.label)}</span>
+    </label>
+  `
+  ).join("");
+
+  edgeLegend.innerHTML = EDGE_TYPES.map(
+    (t) => `
+    <label class="legend-item">
+      <input type="checkbox" value="${safe(t.key)}" checked />
+      <svg width="20" height="10" style="flex-shrink:0">
+        <line x1="0" y1="5" x2="18" y2="5" stroke="${t.color}" stroke-width="2" stroke-dasharray="${t.dash}" />
+      </svg>
+      <span>${safe(t.label)}</span>
+    </label>
+  `
+  ).join("");
+
+  nodeLegend.querySelectorAll("input").forEach((input) => {
+    input.addEventListener("change", () => {
+      state.graph.visibleNodeTypes = new Set(
+        Array.from(nodeLegend.querySelectorAll("input:checked")).map((i) => i.value),
+      );
+      renderGraph();
+    });
+  });
+
+  edgeLegend.querySelectorAll("input").forEach((input) => {
+    input.addEventListener("change", () => {
+      state.graph.visibleEdgeTypes = new Set(
+        Array.from(edgeLegend.querySelectorAll("input:checked")).map((i) => i.value),
+      );
+      renderGraph();
+    });
+  });
+}
+
+function renderGraphDetail() {
+  const container = el("graphDetail");
+  const graph = getGraphData();
+  const node = graph.nodes.find((n) => n.id === state.graph.selectedNodeId);
+  if (!node) {
+    container.innerHTML = `
+      <div class="case-file-empty">
+        <h2>Select a node</h2>
+        <p>Click any node in the graph to inspect its evidence and relationships.</p>
+      </div>
+    `;
+    return;
+  }
+
+  const edges = graph.edges.filter((e) => {
+    const s = typeof e.source === "object" ? e.source.id : e.source;
+    const t = typeof e.target === "object" ? e.target.id : e.target;
+    return s === node.id || t === node.id;
+  });
+
+  const neighborIds = new Set();
+  edges.forEach((e) => {
+    const s = typeof e.source === "object" ? e.source.id : e.source;
+    const t = typeof e.target === "object" ? e.target.id : e.target;
+    neighborIds.add(s === node.id ? t : s);
+  });
+
+  const neighbors = graph.nodes.filter((n) => neighborIds.has(n.id));
+  const profile = getProfiles().find((p) => p.entity_id === node.id);
+
+  container.innerHTML = `
+    <div class="panel-head">
+      <div>
+        <p class="eyebrow">${safe(node.type || "Node")}</p>
+        <h2>${safe(node.label || node.id)}</h2>
+      </div>
+    </div>
+    <div style="padding:16px 24px;display:grid;gap:16px;">
+      ${profile ? `
+        <div class="score-grid" style="grid-template-columns:repeat(2,1fr);">
+          <div class="score-item"><span class="score-label">Score</span><span class="score-value">${(profile.deviation_score || 0).toFixed(1)}</span></div>
+          <div class="score-item"><span class="score-label">LLI</span><span class="score-value">${(profile.aggregate?.lli_ratio || 0).toFixed(1)}x</span></div>
         </div>
-      `,
+      ` : ""}
+      <div>
+        <p class="eyebrow">Properties</p>
+        <dl class="source-row">
+          ${Object.entries(node.meta || {}).map(([k, v]) => {
+            let display = v;
+            if (v === null || v === undefined) display = "";
+            else if (typeof v === "object") display = JSON.stringify(v);
+            return `<div><dt>${safe(k)}</dt><dd>${safe(display)}</dd></div>`;
+          }).join("")}
+        </dl>
+      </div>
+      <div>
+        <p class="eyebrow">Connections (${neighbors.length})</p>
+        <ul class="reasons-list">
+          ${neighbors.map((n) => `<li>${safe(n.label || n.id)} <span style="color:var(--ink-muted)">(${safe(n.type || "unknown")})</span></li>`).join("")}
+        </ul>
+      </div>
+      ${profile ? `<button class="btn btn-secondary" id="openInProfiles">Open case file</button>` : ""}
+    </div>
+  `;
+
+  const openBtn = container.querySelector("#openInProfiles");
+  if (openBtn) {
+    openBtn.addEventListener("click", () => {
+      state.selectedId = node.id;
+      switchTab("profiles");
+    });
+  }
+}
+
+function drawForceGraph(container, graphData, options = {}) {
+  const { width, height } = getChartSize(container);
+  const heightPx = options.height || height;
+
+  const filteredNodes = graphData.nodes.filter((n) => state.graph.visibleNodeTypes.has(n.type));
+  const nodeById = new Map(filteredNodes.map((n) => [n.id, n]));
+  const filteredEdges = graphData.edges.filter((e) => {
+    const s = typeof e.source === "object" ? e.source.id : e.source;
+    const t = typeof e.target === "object" ? e.target.id : e.target;
+    return state.graph.visibleEdgeTypes.has(e.relation) && nodeById.has(s) && nodeById.has(t);
+  });
+
+  if (!filteredNodes.length) {
+    container.innerHTML = `<p class="empty-state" style="padding:48px;">No visible nodes with current filters.</p>`;
+    return;
+  }
+
+  const svg = d3
+    .select(container)
+    .append("svg")
+    .attr("width", width)
+    .attr("height", heightPx)
+    .attr("viewBox", [0, 0, width, heightPx]);
+
+  const tooltip = d3.select(container).append("div").attr("class", "graph-tooltip");
+
+  const g = svg.append("g");
+  const zoom = d3
+    .zoom()
+    .scaleExtent([0.1, 4])
+    .on("zoom", (event) => {
+      g.attr("transform", event.transform);
+      state.graph.transform = event.transform;
+    });
+
+  if (options.enableZoom !== false) {
+    svg.call(zoom);
+    if (state.graph.transform) {
+      svg.call(zoom.transform, state.graph.transform);
+    }
+  }
+
+  svg
+    .append("defs")
+    .selectAll("marker")
+    .data(EDGE_TYPES)
+    .join("marker")
+    .attr("id", (d) => `arrow-${d.key}`)
+    .attr("viewBox", "0 -5 10 10")
+    .attr("refX", 20)
+    .attr("refY", 0)
+    .attr("markerWidth", 6)
+    .attr("markerHeight", 6)
+    .attr("orient", "auto")
+    .append("path")
+    .attr("d", "M0,-5L10,0L0,5")
+    .attr("fill", (d) => d.color);
+
+  const simulation = d3
+    .forceSimulation(filteredNodes)
+    .force(
+      "link",
+      d3
+        .forceLink(filteredEdges)
+        .id((d) => d.id)
+        .distance((d) => (d.relation === "SAME_ADDRESS_AS" || d.relation === "SHARES_PHONE_WITH" ? 70 : 100)),
     )
-    .join("");
-}
+    .force("charge", d3.forceManyBody().strength(-220))
+    .force("center", d3.forceCenter(width / 2, heightPx / 2))
+    .force("collide", d3.forceCollide().radius((d) => nodeRadius(d) + 6));
 
-function renderGraph(result, profile) {
-  const svg = el("graphSvg");
-  svg.replaceChildren();
+  state.graph.simulation = simulation;
+  state.graph.svg = svg;
+  state.graph.zoom = zoom;
 
-  const selected = profile.entity_id;
-  const edges = result.graph.edges.filter((edge) => edge.source === selected || edge.target === selected);
-  const nodeIds = new Set([selected]);
-  edges.forEach((edge) => {
-    nodeIds.add(edge.source);
-    nodeIds.add(edge.target);
+  if (options.enableZoom !== false) {
+    el("graphStats").textContent = `${filteredNodes.length} nodes · ${filteredEdges.length} edges`;
+  }
+
+  const link = g
+    .append("g")
+    .attr("class", "links")
+    .selectAll("line")
+    .data(filteredEdges)
+    .join("line")
+    .attr("class", "graph-link")
+    .attr("stroke", (d) => EDGE_TYPES.find((t) => t.key === d.relation)?.color || "#5e5c58")
+    .attr("stroke-dasharray", (d) => EDGE_TYPES.find((t) => t.key === d.relation)?.dash || "0")
+    .attr("marker-end", (d) => `url(#arrow-${d.relation})`)
+    .attr("stroke-width", (d) => (d.confidence ? Math.max(1.5, d.confidence * 2) : 1.5));
+
+  const node = g
+    .append("g")
+    .attr("class", "nodes")
+    .selectAll("path")
+    .data(filteredNodes)
+    .join("path")
+    .attr("class", (d) => `graph-node ${d.id === state.graph.selectedNodeId ? "selected" : ""}`)
+    .attr("d", (d) => nodeShapePath(d))
+    .attr("fill", (d) => NODE_TYPES.find((t) => t.key === d.type)?.color || "#5e5c58")
+    .attr("transform", (d) => `translate(${d.x || width / 2},${d.y || heightPx / 2})`)
+    .call(
+      d3
+        .drag()
+        .on("start", (event, d) => {
+          if (!event.active) simulation.alphaTarget(0.3).restart();
+          d.fx = d.x;
+          d.fy = d.y;
+        })
+        .on("drag", (event, d) => {
+          d.fx = event.x;
+          d.fy = event.y;
+        })
+        .on("end", (event, d) => {
+          if (!event.active) simulation.alphaTarget(0);
+          d.fx = null;
+          d.fy = null;
+        }),
+    );
+
+  const label = g
+    .append("g")
+    .attr("class", "labels")
+    .selectAll("text")
+    .data(filteredNodes)
+    .join("text")
+    .attr("class", "graph-label")
+    .attr("text-anchor", "middle")
+    .attr("dy", (d) => -nodeRadius(d) - 6)
+    .text((d) => (d.label || d.id).slice(0, 22));
+
+  node
+    .on("mouseenter", (event, d) => {
+      tooltip.html(`<strong>${safe(d.label || d.id)}</strong><br>${safe(d.type || "Node")}`).classed("visible", true);
+      highlightEgo(d.id, node, link, label);
+    })
+    .on("mousemove", (event) => {
+      tooltip.style("left", `${event.offsetX + 12}px`).style("top", `${event.offsetY + 12}px`);
+    })
+    .on("mouseleave", () => {
+      tooltip.classed("visible", false);
+      clearHighlight(node, link, label);
+    })
+    .on("click", (_event, d) => {
+      state.graph.selectedNodeId = d.id;
+      renderGraphDetail();
+      node.attr("class", (n) => `graph-node ${n.id === d.id ? "selected" : ""}`);
+    });
+
+  simulation.on("tick", () => {
+    link
+      .attr("x1", (d) => d.source.x)
+      .attr("y1", (d) => d.source.y)
+      .attr("x2", (d) => d.target.x)
+      .attr("y2", (d) => d.target.y);
+
+    node.attr("transform", (d) => `translate(${d.x},${d.y})`);
+    label.attr("x", (d) => d.x).attr("y", (d) => d.y);
   });
-  const nodes = result.graph.nodes.filter((node) => nodeIds.has(node.id));
-  const nodeById = Object.fromEntries(nodes.map((node) => [node.id, node]));
 
-  const positions = {};
-  positions[selected] = { x: 380, y: 180 };
-  const others = nodes.filter((node) => node.id !== selected);
-  const radiusX = 270;
-  const radiusY = 120;
-  others.forEach((node, index) => {
-    const angle = (Math.PI * 2 * index) / Math.max(others.length, 1) - Math.PI / 2;
-    positions[node.id] = {
-      x: 380 + Math.cos(angle) * radiusX,
-      y: 180 + Math.sin(angle) * radiusY,
-    };
+  if (state.graph.selectedNodeId) {
+    const selected = filteredNodes.find((n) => n.id === state.graph.selectedNodeId);
+    if (selected) highlightEgo(selected.id, node, link, label);
+  }
+}
+
+function nodeRadius(d) {
+  if (d.type === "Person") return 14;
+  if (d.type === "AddressHub" || d.type === "PhoneHub") return 8;
+  return 10;
+}
+
+function nodeShapePath(d) {
+  const r = nodeRadius(d);
+  const type = NODE_TYPES.find((t) => t.key === d.type)?.shape || "circle";
+  switch (type) {
+    case "square":
+      return `M${-r},${-r} h${r * 2} v${r * 2} h${-r * 2} z`;
+    case "diamond":
+      return `M0,${-r} L${r},0 L0,${r} L${-r},0 z`;
+    case "triangle":
+      return `M0,${-r} L${r},${r} L${-r},${r} z`;
+    case "hexagon":
+      return d3
+        .symbol()
+        .type(d3.symbolWye)
+        .size(r * r * 4)();
+    default:
+      return d3.symbol().type(d3.symbolCircle).size(r * r * 4)();
+  }
+}
+
+function highlightEgo(centerId, node, link, label) {
+  const neighborIds = new Set([centerId]);
+  link.each(function (d) {
+    const s = typeof d.source === "object" ? d.source.id : d.source;
+    const t = typeof d.target === "object" ? d.target.id : d.target;
+    if (s === centerId || t === centerId) {
+      neighborIds.add(s);
+      neighborIds.add(t);
+    }
   });
 
-  edges.forEach((edge) => {
-    const source = positions[edge.source];
-    const target = positions[edge.target];
-    if (!source || !target) return;
-    const line = document.createElementNS(svgNS, "line");
-    line.setAttribute("x1", source.x);
-    line.setAttribute("y1", source.y);
-    line.setAttribute("x2", target.x);
-    line.setAttribute("y2", target.y);
-    line.setAttribute("class", "graph-edge");
-    svg.appendChild(line);
+  node.classed("dimmed", (d) => !neighborIds.has(d.id));
+  link.classed("dimmed", (d) => {
+    const s = typeof d.source === "object" ? d.source.id : d.source;
+    const t = typeof d.target === "object" ? d.target.id : d.target;
+    return s !== centerId && t !== centerId;
+  });
+  label.classed("dimmed", (d) => !neighborIds.has(d.id));
+}
 
-    const relation = document.createElementNS(svgNS, "text");
-    relation.setAttribute("x", (source.x + target.x) / 2);
-    relation.setAttribute("y", (source.y + target.y) / 2 - 4);
-    relation.setAttribute("text-anchor", "middle");
-    relation.setAttribute("class", "graph-relation");
-    relation.textContent = edge.relation;
-    svg.appendChild(relation);
+function clearHighlight(node, link, label) {
+  node.classed("dimmed", false);
+  link.classed("dimmed", false);
+  label.classed("dimmed", false);
+}
+
+/* Event wiring */
+function init() {
+  el("runDemo").addEventListener("click", runDemo);
+  el("runBenchmark").addEventListener("click", runBenchmark);
+  el("runFiles").addEventListener("click", runUploadedFiles);
+  el("fileInput").addEventListener("change", handleFiles);
+  el("exportReport").addEventListener("click", () => {
+    if (!state.result) return;
+    const blob = new Blob([JSON.stringify(state.result, null, 2)], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `taxnet-report-${new Date().toISOString().slice(0, 10)}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
   });
 
-  nodes.forEach((node) => {
-    const pos = positions[node.id];
-    const group = document.createElementNS(svgNS, "g");
-    const circle = document.createElementNS(svgNS, "circle");
-    const color = nodeColor(node.type, node.id === selected);
-    circle.setAttribute("cx", pos.x);
-    circle.setAttribute("cy", pos.y);
-    circle.setAttribute("r", node.id === selected ? 30 : 22);
-    circle.setAttribute("fill", color);
-    circle.setAttribute("class", "graph-node");
-    group.appendChild(circle);
-
-    const label = document.createElementNS(svgNS, "text");
-    label.setAttribute("x", pos.x);
-    label.setAttribute("y", pos.y + (node.id === selected ? 46 : 38));
-    label.setAttribute("text-anchor", "middle");
-    label.setAttribute("class", "graph-label");
-    label.textContent = trimLabel(nodeById[node.id]?.label || node.id);
-    group.appendChild(label);
-    svg.appendChild(group);
+  document.querySelectorAll(".tab-btn").forEach((btn) => {
+    btn.addEventListener("click", () => switchTab(btn.id.replace("tab", "").toLowerCase()));
   });
+
+  document.querySelectorAll(".filter-chips .chip").forEach((chip) => {
+    chip.addEventListener("click", () => {
+      document.querySelectorAll(".filter-chips .chip").forEach((c) => c.classList.remove("active"));
+      chip.classList.add("active");
+      renderProfileQueue();
+    });
+  });
+
+  el("profileSearch").addEventListener("input", renderProfileQueue);
+
+  el("resetGraph").addEventListener("click", () => {
+    state.graph.selectedNodeId = null;
+    renderGraph();
+  });
+
+  el("fitGraph").addEventListener("click", () => {
+    if (state.graph.svg && state.graph.zoom) {
+      state.graph.svg.transition().duration(500).call(state.graph.zoom.transform, d3.zoomIdentity);
+    }
+  });
+
+  window.addEventListener("resize", () => {
+    if (state.activeTab === "overview") renderTierChart(getProfiles());
+    if (state.activeTab === "profiles") renderProfiles();
+    if (state.activeTab === "graph") renderGraph();
+  });
+
+  renderOverview();
 }
 
-function nodeColor(type, selected) {
-  if (selected) return "oklch(0.47 0.19 252)";
-  if (type === "Vehicle") return "oklch(0.62 0.14 78)";
-  if (type === "Property") return "oklch(0.56 0.16 28)";
-  if (type === "Meter") return "oklch(0.57 0.13 190)";
-  if (type === "TaxReturn") return "oklch(0.54 0.13 150)";
-  if (type === "Address") return "oklch(0.70 0.05 240)";
-  return "oklch(0.50 0.09 230)";
-}
-
-function trimLabel(label) {
-  const text = String(label || "");
-  return text.length > 24 ? `${text.slice(0, 21)}...` : text;
-}
-
-function exportReport() {
-  const result = state.result;
-  if (!result) return;
-  const profiles = result.scoring.flagged_profiles;
-  const payload = {
-    generated_at: new Date().toISOString(),
-    mode: result.mode,
-    canonical_record_count: result.canonical_record_count,
-    scoring_summary: result.scoring.summary,
-    graph_summary: result.graph.summary,
-    resolution_runtime_stats: result.resolution.runtime_stats,
-    profiles: profiles.map((profile) => ({
-      entity_id: profile.entity_id,
-      name: profile.name,
-      risk_level: profile.risk_level,
-      deviation_score: profile.deviation_score,
-      direct_score: profile.direct_score,
-      associate_proxy_score: profile.associate_proxy_score,
-      risk_basis: profile.risk_basis,
-      scoring_confidence: profile.scoring_confidence,
-      evidence_coverage: profile.evidence_coverage,
-      score_components: profile.score_components,
-      direct_reasons: profile.direct_reasons,
-      associate_reasons: profile.associate_reasons,
-      uncertainty_flags: profile.uncertainty_flags,
-      possible_matches: profile.possible_matches,
-      explanation: profile.explanation,
-      source_rows: profile.source_rows,
-    })),
-  };
-  const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
-  if (state.reportUrl) URL.revokeObjectURL(state.reportUrl);
-  state.reportUrl = URL.createObjectURL(blob);
-  const link = document.createElement("a");
-  const stamp = new Date().toISOString().replaceAll(":", "-").slice(0, 19);
-  link.href = state.reportUrl;
-  link.download = `taxnet-audit-report-${stamp}.json`;
-  document.body.appendChild(link);
-  link.click();
-  link.remove();
-}
-
-el("runDemo").addEventListener("click", runDemo);
-el("runFiles").addEventListener("click", runUploadedFiles);
-el("runBenchmark").addEventListener("click", runBenchmark);
-el("exportReport").addEventListener("click", exportReport);
-el("fileInput").addEventListener("change", handleFiles);
-
-runDemo();
+init();

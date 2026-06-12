@@ -8,6 +8,8 @@ from dataclasses import dataclass
 from itertools import combinations
 from typing import Any
 
+from .ann_blocking import ann_candidate_pairs
+
 from .normalization import (
     address_block,
     city_hint,
@@ -23,22 +25,7 @@ from .normalization import (
     surname,
     token_similarity,
 )
-
-
-@dataclass
-class RecordFingerprint:
-    record_id: str
-    person_name: str
-    norm_name: str
-    address: str
-    norm_address: str
-    phone: str
-    national_id: str
-    city: str
-    block_key: str
-    source_dataset: str
-    source_kind: str
-    truth_person_id: str
+from .types import RecordFingerprint
 
 
 class UnionFind:
@@ -82,6 +69,9 @@ def fingerprint(record: dict[str, Any]) -> RecordFingerprint:
 
 def should_compare(left: RecordFingerprint, right: RecordFingerprint) -> bool:
     if left.record_id == right.record_id:
+        return False
+    # If both sides have national IDs and they disagree, they are different people.
+    if left.national_id and right.national_id and left.national_id != right.national_id:
         return False
     if left.national_id and right.national_id and left.national_id == right.national_id:
         return True
@@ -278,6 +268,7 @@ def resolve_entities(
     records: list[dict[str, Any]],
     parallel: bool = True,
     max_workers: int | None = None,
+    use_ann_blocking: bool = False,
 ) -> dict[str, Any]:
     fingerprints = [fingerprint(record) for record in records if record.get("person_name")]
     by_id = {fp.record_id: fp for fp in fingerprints}
@@ -289,7 +280,10 @@ def resolve_entities(
         uf.union(left_id, right_id)
 
     # Phase 2: blocking + fuzzy comparison on remaining candidates.
-    pairs = candidate_pairs(fingerprints)
+    if use_ann_blocking:
+        pairs = ann_candidate_pairs(fingerprints)
+    else:
+        pairs = candidate_pairs(fingerprints)
     candidates = len(pairs)
     matches: list[dict[str, Any]] = []
     possibles: list[dict[str, Any]] = []

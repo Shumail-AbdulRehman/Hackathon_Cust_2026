@@ -187,18 +187,18 @@ def normalize_phone(value: object) -> str:
 
 
 def normalize_national_id(value: object) -> str:
-    """Normalize Pakistani CNIC/NTN to a clean digit string.
+    """Normalize a national identifier to a clean digit string.
 
     CNIC: 13 digits (XXXXX-XXXXXXX-X).
     NTN: 7 digits.
-    Returns empty string if it does not look like either.
+    Any other digit-only identifier with 5+ digits is also accepted so that
+    external datasets (e.g., ICIJ node IDs) can be used as exact-match keys.
+    Returns empty string if it does not look like an identifier.
     """
     if value is None:
         return ""
     digits = re.sub(r"\D", "", str(value))
-    if len(digits) == 13:
-        return digits
-    if len(digits) == 7:
+    if len(digits) >= 5:
         return digits
     return ""
 

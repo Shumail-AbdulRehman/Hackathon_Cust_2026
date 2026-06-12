@@ -28,6 +28,32 @@ FEATURE_COLUMNS = [
     "pagerank_score",
     "community_size",
     "degree_centrality",
+    "offshore_entity_count",
+    "offshore_jurisdiction_count",
+    "offshore_source_count",
+    "lli_ratio",
+    "lli_score",
+    "nic_province_count",
+    "nic_district_count",
+    "nic_province_punjab",
+    "nic_province_sindh",
+    "nic_province_kp",
+    "nic_province_balochistan",
+    "nic_province_islamabad",
+    "benford_max_mad",
+    "benford_income_mad",
+    "benford_tax_paid_mad",
+    "benford_property_mad",
+    "benford_utility_mad",
+    "benford_vehicle_cc_mad",
+    "asset_event_count",
+    "first_asset_year",
+    "last_asset_year",
+    "peak_asset_year",
+    "peak_year_asset_value",
+    "asset_burst_detected",
+    "asset_burst_window_value",
+    "asset_burst_window_event_count",
 ]
 
 
@@ -77,6 +103,7 @@ def train_model(
         learning_rate=0.05,
         objective="reg:squarederror",
         random_state=42,
+        base_score=0.5,
     )
     model.fit(X, y)
     return model
