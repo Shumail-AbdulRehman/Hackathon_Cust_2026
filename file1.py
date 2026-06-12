@@ -21,12 +21,10 @@ from pathlib import Path
 from typing import Any
 
 import faiss
-import numpy as np
 
 from server_utils import (
     download_if_missing,
     is_checkpoint_complete,
-    load_checkpoint,
     log as _log,
     read_jsonl,
     save_checkpoint,
@@ -279,9 +277,7 @@ def word_chunks(text: str, chunk_words: int = CHUNK_WORDS, overlap: int = CHUNK_
     return chunks
 
 
-def build_chunks_for_act(
-    act_name: str, md_text: str
-) -> tuple[list[str], list[dict[str, Any]]]:
+def build_chunks_for_act(act_name: str, md_text: str) -> tuple[list[str], list[dict[str, Any]]]:
     """Return (chunks, metadatas) for a single act."""
     sections = build_section_tree(md_text)
     chunks: list[str] = []
@@ -361,7 +357,9 @@ def main() -> int:
     parser = argparse.ArgumentParser(description="Build a vectorless RAG index for Pakistan tax laws.")
     parser.add_argument("--force-download", action="store_true", help="Re-download all PDFs.")
     parser.add_argument("--force-index", action="store_true", help="Rebuild the index even if it exists.")
-    parser.add_argument("--skip-download", action="store_true", help="Use existing PDFs in server_artifacts/law_rag/pdfs/.")
+    parser.add_argument(
+        "--skip-download", action="store_true", help="Use existing PDFs in server_artifacts/law_rag/pdfs/."
+    )
     parser.add_argument("--skip-index", action="store_true", help="Only download PDFs; do not build the index.")
     args = parser.parse_args()
 
@@ -381,9 +379,7 @@ def main() -> int:
             for law in tqdm(LAW_URLS, desc="Laws"):
                 pdf_path = PDFS_DIR / law["filename"]
                 try:
-                    download_if_missing(
-                        law["url"], pdf_path, force=args.force_download, stage=STAGE
-                    )
+                    download_if_missing(law["url"], pdf_path, force=args.force_download, stage=STAGE)
                     success_count += 1
                 except Exception as exc:
                     log(f"  ERROR downloading {law['name']}: {exc}")
@@ -426,7 +422,6 @@ def main() -> int:
     # ------------------------------------------------------------------
     if is_checkpoint_complete("file1_chunks") and not args.force_index:
         log("Chunks checkpoint found; loading from disk.")
-        cp = load_checkpoint("file1_chunks")
         all_chunks = [r["text"] for r in read_jsonl(CHUNKS_PATH)]
         all_metadata = read_jsonl(META_PATH)
         log(f"Loaded {len(all_chunks)} chunks and {len(all_metadata)} metadata records.")

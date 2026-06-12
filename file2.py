@@ -24,9 +24,6 @@ from __future__ import annotations
 
 import argparse
 import json
-import random
-import re
-import shutil
 import sys
 import zipfile
 from pathlib import Path
@@ -46,8 +43,10 @@ from server_utils import (
     write_jsonl,
 )
 from taxnet.features import build_entity_features
+from taxnet.loaders.open_sanctions_loader import load_targets
 from taxnet.ml_scorer import FEATURE_COLUMNS as TAXNET_FEATURE_COLUMNS
 from taxnet.pipeline import run_pipeline
+from taxnet.watchlist_screening import screen_entities
 
 # Optional progress bars
 try:
@@ -159,7 +158,6 @@ def load_open_sanctions(path: Path | None = None) -> dict[str, list[dict[str, An
         if not target_id or not name:
             continue
 
-        aliases = str(row.get("aliases") or "").strip()
         address = str(row.get("addresses") or "").strip()
         countries = str(row.get("countries") or "").strip()
         schema = str(row.get("schema") or "").strip()
@@ -287,10 +285,7 @@ def load_elliptic(data_dir: Path, sample_fraction: float = 0.2) -> dict[str, lis
     # Classes typically: txId, class (1=illicit, 2=licit, 3=unknown)
     labeled = classes_df.filter(pl.col("class").is_in([1, 2]))
     sample_n = max(1, int(labeled.height * sample_fraction))
-    sampled_txids = set(
-        int(x)
-        for x in labeled.sample(n=sample_n, seed=42)["txId"].to_list()
-    )
+    sampled_txids = set(int(x) for x in labeled.sample(n=sample_n, seed=42)["txId"].to_list())
 
     # Build a mapping from txId to class label.
     class_map = {int(row["txId"]): int(row["class"]) for row in classes_df.to_dicts()}
@@ -316,7 +311,9 @@ def load_elliptic(data_dir: Path, sample_fraction: float = 0.2) -> dict[str, lis
     return {"elliptic": records}
 
 
-def load_ibm_aml(data_dir: Path, variant: str = "LI-Small_Trans.csv", sample_size: int = 200_000) -> dict[str, list[dict[str, Any]]]:
+def load_ibm_aml(
+    data_dir: Path, variant: str = "LI-Small_Trans.csv", sample_size: int = 200_000
+) -> dict[str, list[dict[str, Any]]]:
     """Load a sample of IBM AML transaction data.
 
     Expects a CSV like LI-Small_Trans.csv with columns including:
@@ -424,10 +421,7 @@ def ensure_elliptic() -> Path:
     """Return the Elliptic++ data directory (user must clone the repo manually)."""
     data_dir = RAW_DIR / "elliptic"
     data_dir.mkdir(parents=True, exist_ok=True)
-    log(
-        "NOTE: Elliptic++ must be downloaded manually from "
-        f"{DATASET_CONFIG['elliptic']['repo_url']} into {data_dir}"
-    )
+    log(f"NOTE: Elliptic++ must be downloaded manually from {DATASET_CONFIG['elliptic']['repo_url']} into {data_dir}")
     return data_dir
 
 
@@ -448,9 +442,7 @@ def ensure_ibm_aml() -> Path:
 # ---------------------------------------------------------------------------
 
 
-def build_proxy_labels(
-    entity_records: dict[str, list[dict[str, Any]]]
-) -> dict[str, float]:
+def build_proxy_labels(entity_records: dict[str, list[dict[str, Any]]]) -> dict[str, float]:
     """Assign a proxy risk label to each entity based on its source records."""
     labels: dict[str, float] = {}
 
@@ -487,9 +479,7 @@ def build_proxy_labels(
     return labels
 
 
-def add_source_indicators(
-    entity_records: dict[str, list[dict[str, Any]]]
-) -> dict[str, dict[str, int]]:
+def add_source_indicators(entity_records: dict[str, list[dict[str, Any]]]) -> dict[str, dict[str, int]]:
     """Return per-entity binary source-indicator dicts."""
     indicators: dict[str, dict[str, int]] = {}
     source_map = {
@@ -528,9 +518,7 @@ def train_xgboost(
     if can_stratify:
         split_kwargs["stratify"] = y_binary
 
-    X_train, X_test, y_train, y_test, ids_train, ids_test = train_test_split(
-        X, y, entity_ids, **split_kwargs
-    )
+    X_train, X_test, y_train, y_test, ids_train, ids_test = train_test_split(X, y, entity_ids, **split_kwargs)
 
     model = xgb.XGBRegressor(
         n_estimators=200,
@@ -556,9 +544,7 @@ def train_xgboost(
         "test_size": len(y_test),
         "train_size": len(y_train),
         "auc": round(roc_auc_score(y_test_binary, y_pred), 4),
-        "classification_report": classification_report(
-            y_test_binary, y_pred_binary, output_dict=True, zero_division=0
-        ),
+        "classification_report": classification_report(y_test_binary, y_pred_binary, output_dict=True, zero_division=0),
     }
 
     return model, metrics
@@ -577,7 +563,9 @@ def main() -> int:
     parser.add_argument("--skip-uk", action="store_true", help="Skip UK Companies House.")
     parser.add_argument("--skip-elliptic", action="store_true", help="Skip Elliptic++.")
     parser.add_argument("--skip-ibm", action="store_true", help="Skip IBM AML.")
-    parser.add_argument("--icij-sample", action="store_true", help="Use a 50k-entity ICIJ sample instead of the full graph.")
+    parser.add_argument(
+        "--icij-sample", action="store_true", help="Use a 50k-entity ICIJ sample instead of the full graph."
+    )
     parser.add_argument("--use-ann-blocking", action="store_true", help="Use ANN blocking for entity resolution.")
     args = parser.parse_args()
 
@@ -619,7 +607,9 @@ def main() -> int:
     if not args.skip_uk:
         uk_dir = RAW_DIR / "uk-companies-house"
         if uk_dir.exists():
-            datasets.update(load_uk_companies_house(uk_dir, sample_fraction=DATASET_CONFIG["uk-companies-house"]["sample_fraction"]))
+            datasets.update(
+                load_uk_companies_house(uk_dir, sample_fraction=DATASET_CONFIG["uk-companies-house"]["sample_fraction"])
+            )
 
     if not args.skip_elliptic:
         elliptic_dir = RAW_DIR / "elliptic"
@@ -650,13 +640,26 @@ def main() -> int:
     )
 
     # ------------------------------------------------------------------
-    # Stage 4: features + proxy labels
+    # Stage 4: features + proxy labels + watchlist screening
     # ------------------------------------------------------------------
     log("Building entity features...")
     features = build_entity_features(result["graph"], result["resolution"], result.get("falkor_summary"))
     entity_records = result["graph"].get("entity_records", {})
     labels = build_proxy_labels(entity_records)
     source_indicators = add_source_indicators(entity_records)
+
+    log("Screening resolved entities against OpenSanctions watchlist...")
+    watchlist_matches: dict[str, dict[str, Any]] = {}
+    open_sanctions_path = DATASET_CONFIG["open-sanctions"]["local_file"]
+    if open_sanctions_path.exists():
+        try:
+            watchlist_targets = load_targets(open_sanctions_path)
+            watchlist_matches = screen_entities(result["resolution"]["entities"], watchlist_targets)
+            log(f"  Found {len(watchlist_matches)} watchlist matches.")
+        except Exception as exc:
+            log(f"  WARNING: watchlist screening failed: {exc}")
+    else:
+        log("  OpenSanctions file not found; skipping watchlist screening.")
 
     # ------------------------------------------------------------------
     # Stage 5: train ML model
@@ -704,6 +707,7 @@ def main() -> int:
                 "source_indicators": source_indicators[entity_id],
                 "record_sources": list({r.get("source_dataset", "") for r in recs}),
                 "record_count": len(recs),
+                "watchlist_match": watchlist_matches.get(entity_id),
             }
         )
     write_jsonl(PROFILES_PATH, profiles)

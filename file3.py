@@ -18,8 +18,8 @@ The script is idempotent: completed stages are skipped unless --force is passed.
 from __future__ import annotations
 
 import argparse
-import json
-import os
+import random
+import re
 import sys
 from pathlib import Path
 from typing import Any
@@ -29,7 +29,6 @@ from huggingface_hub import snapshot_download
 from transformers import AutoModelForCausalLM, AutoTokenizer
 
 from server_utils import (
-    download_if_missing,
     is_checkpoint_complete,
     log as _log,
     read_jsonl,
@@ -195,9 +194,7 @@ def generate_training_data(
         return
 
     if not profiles_path.exists():
-        raise FileNotFoundError(
-            f"Entity profiles not found: {profiles_path}. Run file2.py first."
-        )
+        raise FileNotFoundError(f"Entity profiles not found: {profiles_path}. Run file2.py first.")
 
     log("Loading entity profiles...")
     all_profiles = read_jsonl(profiles_path)
@@ -227,8 +224,7 @@ def generate_training_data(
             return
 
         texts = [
-            tokenizer.apply_chat_template(msgs, tokenize=False, add_generation_prompt=True)
-            for msgs in batch_prompts
+            tokenizer.apply_chat_template(msgs, tokenize=False, add_generation_prompt=True) for msgs in batch_prompts
         ]
         inputs = tokenizer(texts, return_tensors="pt", padding=True, truncation=True, max_length=2048)
         inputs = {k: v.to(model.device) for k, v in inputs.items()}
@@ -309,7 +305,7 @@ def train_and_export_slm(
     gguf_path = gguf_dir / "smollm135m_taxnet.gguf"
 
     if final_dir.exists() and gguf_path.exists() and not force:
-        log(f"Model and GGUF already exist; skipping training.")
+        log("Model and GGUF already exist; skipping training.")
         return gguf_path
 
     from unsloth import FastLanguageModel
