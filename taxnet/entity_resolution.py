@@ -4,7 +4,6 @@ from __future__ import annotations
 
 from collections import defaultdict
 from concurrent.futures import ProcessPoolExecutor
-from dataclasses import dataclass
 from itertools import combinations
 from typing import Any
 

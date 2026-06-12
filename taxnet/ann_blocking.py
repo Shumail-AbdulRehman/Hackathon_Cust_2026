@@ -10,7 +10,6 @@ to returning an empty set and the caller can use traditional blocking.
 
 from __future__ import annotations
 
-from typing import Any
 
 from .types import RecordFingerprint
 
@@ -47,7 +46,6 @@ def ann_candidate_pairs(
 
     texts = [_build_blocking_text(fp) for fp in fingerprints]
     record_ids = [fp.record_id for fp in fingerprints]
-    id_to_index = {rid: idx for idx, rid in enumerate(record_ids)}
 
     try:
         import pandas as pd

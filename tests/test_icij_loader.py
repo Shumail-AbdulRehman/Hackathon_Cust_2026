@@ -2,9 +2,7 @@
 
 from __future__ import annotations
 
-from pathlib import Path
 
-import pytest
 
 from taxnet.graph_engine import build_graph
 from taxnet.ingestion import canonicalize_datasets
