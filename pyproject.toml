@@ -52,7 +52,7 @@ server = [
 ]
 
 [tool.setuptools]
-packages = ["taxnet"]
+packages = ["taxnet", "slm"]
 
 [tool.ruff]
 line-length = 120
