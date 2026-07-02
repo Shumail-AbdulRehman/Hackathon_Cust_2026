@@ -43,3 +43,24 @@ def test_fallback_row_limit():
     with patch("taxnet.csv_upload.pl.read_csv", side_effect=RuntimeError("polars fails")):
         with pytest.raises(ValueError, match="more than 10 rows"):
             parse_uploaded_csv(io.BytesIO(text.encode("utf-8")), "big.csv", max_rows=10)
+
+
+def test_unsupported_extension():
+    with pytest.raises(ValueError, match="Unsupported file extension: .xlsx"):
+        parse_uploaded_csv(io.BytesIO(b"a,b\n1,2\n"), "data.xlsx")
+
+
+def test_utf8_sig_bom():
+    text = "name,age\nAlice,30\n"
+    bom = "\ufeff".encode("utf-8-sig")
+    rows = parse_uploaded_csv(io.BytesIO(bom + text.encode("utf-8")), "people.csv")
+    assert rows == [{"name": "Alice", "age": "30"}]
+
+
+def test_semicolon_delimited():
+    text = "name;age\nAlice;30\nBob;40\n"
+    rows = parse_uploaded_csv(io.BytesIO(text.encode("utf-8")), "people.csv")
+    assert rows == [
+        {"name": "Alice", "age": "30"},
+        {"name": "Bob", "age": "40"},
+    ]

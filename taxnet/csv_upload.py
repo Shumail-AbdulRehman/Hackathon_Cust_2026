@@ -32,7 +32,7 @@ def parse_uploaded_csv(
     file_like = BytesIO(full_bytes)
 
     sample_bytes = full_bytes[:8192]
-    encoding = "utf-8"
+    encoding = "utf-8-sig" if sample_bytes.startswith(b"\xef\xbb\xbf") else "utf-8"
     try:
         sample_text = sample_bytes.decode(encoding)
     except UnicodeDecodeError:
@@ -40,12 +40,6 @@ def parse_uploaded_csv(
         sample_text = sample_bytes.decode(encoding, errors="replace")
 
     delimiter = _sniff_delimiter(sample_text)
-
-    def _row_limit_message() -> str:
-        return (
-            f"{filename} has more than {max_rows:,} rows. "
-            "Please upload a smaller file or sample it first."
-        )
 
     try:
         df = pl.read_csv(
@@ -56,19 +50,25 @@ def parse_uploaded_csv(
             try_parse_dates=False,
             n_rows=max_rows + 1,
         )
-    except Exception as exc:
+    except Exception as polars_exc:
         try:
             file_like.seek(0)
             text_io = TextIOWrapper(file_like, encoding=encoding)
             reader = csv.DictReader(text_io, delimiter=delimiter)
             rows = list(reader)
-        except Exception:
-            raise ValueError(f"Could not parse {filename}: {exc}") from exc
+        except Exception as fallback_exc:
+            raise ValueError(
+                f"Could not parse {filename}: polars error: {polars_exc}; "
+                f"csv fallback error: {fallback_exc}"
+            ) from polars_exc
     else:
         rows = df.to_dicts()
 
     if len(rows) > max_rows:
-        raise ValueError(_row_limit_message())
+        raise ValueError(
+            f"{filename} has more than {max_rows:,} rows. "
+            "Please upload a smaller file or sample it first."
+        )
 
     if not rows:
         raise ValueError(f"{filename} contains no data rows.")
