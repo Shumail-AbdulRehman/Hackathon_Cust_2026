@@ -1,4 +1,5 @@
 import { useState, useCallback, useMemo } from 'react'
+
 import {
   getDemo,
   getBenchmark,
@@ -23,24 +24,6 @@ import GraphDetail from './components/GraphDetail'
 import ChatTab from './components/ChatTab'
 
 const TABS = ['overview', 'profiles', 'graph', 'chat']
-
-function formatPKR(value) {
-  const num = Number(value)
-  if (!Number.isFinite(num)) return '—'
-  return `PKR ${num.toLocaleString()}`
-}
-
-function safe(str) {
-  return String(str ?? '')
-    .replaceAll('&', '&amp;')
-    .replaceAll('<', '&lt;')
-    .replaceAll('>', '&gt;')
-    .replaceAll('"', '&quot;')
-}
-
-function tierClass(tier) {
-  return TIER_ORDER.includes(tier) ? tier : 'green'
-}
 
 export default function App() {
   const [activeTab, setActiveTab] = useState('overview')
@@ -212,6 +195,36 @@ export default function App() {
     }))
   }, [])
 
+  const handleMappingReviewChange = useCallback((datasetName, field, value) => {
+    if (field === '_kind') {
+      handleKindChange(datasetName, value)
+    } else {
+      handleMappingChange(datasetName, field, value)
+    }
+  }, [handleKindChange, handleMappingChange])
+
+  const handleNodeTypeToggle = useCallback((key) => {
+    setVisibleNodeTypes((prev) => {
+      const next = new Set(prev)
+      if (next.has(key)) next.delete(key)
+      else next.add(key)
+      return next
+    })
+  }, [])
+
+  const handleEdgeTypeToggle = useCallback((key) => {
+    setVisibleEdgeTypes((prev) => {
+      const next = new Set(prev)
+      if (next.has(key)) next.delete(key)
+      else next.add(key)
+      return next
+    })
+  }, [])
+
+  const selectedGraphNode = useMemo(() => {
+    return result?.graph?.nodes?.find((n) => n.id === selectedGraphNodeId) || null
+  }, [result?.graph?.nodes, selectedGraphNodeId])
+
   const metrics = useMemo(() => {
     if (!result) return null
     if (result.mode === 'benchmark') {
@@ -245,17 +258,41 @@ export default function App() {
   return (
     <>
       <a href="#main-content" className="skip-link">Skip to main content</a>
-      <Header
-        onRunDemo={runDemo}
-        onRunBenchmark={runBenchmark}
-        onRunUploaded={handleRunUploaded}
-        onExport={handleExport}
-        onFilesSelected={handleFiles}
-        benchmarkCitizens={benchmarkCitizens}
-        onBenchmarkCitizensChange={setBenchmarkCitizens}
-        canExport={!!result}
-        loading={loading}
-      />
+      <Header>
+        <button className="btn btn-primary" onClick={runDemo} disabled={loading}>
+          Run synthetic audit
+        </button>
+        <label className="btn btn-secondary file-button">
+          Upload CSVs
+          <input
+            type="file"
+            multiple
+            accept=".csv"
+            onChange={(e) => handleFiles(e.target.files)}
+            disabled={loading}
+          />
+        </label>
+        <button className="btn btn-secondary" onClick={handleRunUploaded} disabled={loading}>
+          Run uploaded
+        </button>
+        <div className="benchmark-control">
+          <input
+            type="number"
+            min={1}
+            max={5000}
+            value={benchmarkCitizens}
+            onChange={(e) => setBenchmarkCitizens(e.target.value)}
+            disabled={loading}
+            aria-label="Benchmark citizens"
+          />
+          <button className="btn btn-secondary" onClick={runBenchmark} disabled={loading}>
+            Run benchmark
+          </button>
+        </div>
+        <button className="btn btn-secondary" onClick={handleExport} disabled={!result || loading}>
+          Export
+        </button>
+      </Header>
       <main id="main-content" className="main-content">
         {error && <div className="error-state" style={{ marginBottom: 'var(--space-lg)' }}>{error}</div>}
         <TabNav tabs={TABS} activeTab={activeTab} onChange={setActiveTab} />
@@ -306,8 +343,7 @@ export default function App() {
                   <MappingReview
                     profiles={uploadProfiles}
                     mappings={mappings}
-                    onMappingChange={handleMappingChange}
-                    onKindChange={handleKindChange}
+                    onChange={handleMappingReviewChange}
                   />
                 </section>
               )}
@@ -328,20 +364,17 @@ export default function App() {
           <section className="tab-panel active" role="tabpanel" aria-labelledby="tab-profiles">
             <div className="profiles-layout">
               <ProfileQueue
-                flagged={flaggedProfiles}
+                profiles={flaggedProfiles}
                 selectedId={selectedEntityId}
                 onSelect={setSelectedEntityId}
               />
               <CaseFile
                 profile={selectedProfile}
-                graph={result?.graph}
+                graphData={result?.graph}
                 onInvestigateInGraph={(entityId) => {
                   setSelectedGraphNodeId(entityId)
                   setActiveTab('graph')
                 }}
-                formatPKR={formatPKR}
-                tierClass={tierClass}
-                safe={safe}
               />
             </div>
           </section>
@@ -353,8 +386,8 @@ export default function App() {
               <GraphControls
                 visibleNodeTypes={visibleNodeTypes}
                 visibleEdgeTypes={visibleEdgeTypes}
-                onNodeTypesChange={setVisibleNodeTypes}
-                onEdgeTypesChange={setVisibleEdgeTypes}
+                onNodeTypeToggle={handleNodeTypeToggle}
+                onEdgeTypeToggle={handleEdgeTypeToggle}
                 onReset={() => {
                   setSelectedGraphNodeId(null)
                 }}
@@ -371,7 +404,7 @@ export default function App() {
                   </div>
                 </div>
                 <GraphCanvas
-                  graph={result?.graph}
+                  graphData={result?.graph}
                   selectedNodeId={selectedGraphNodeId}
                   onSelectNode={setSelectedGraphNodeId}
                   visibleNodeTypes={visibleNodeTypes}
@@ -379,10 +412,10 @@ export default function App() {
                 />
               </div>
               <GraphDetail
-                graph={result?.graph}
-                selectedNodeId={selectedGraphNodeId}
+                node={selectedGraphNode}
+                graphData={result?.graph}
                 profiles={profiles}
-                onOpenInProfiles={(entityId) => {
+                onOpenCaseFile={(entityId) => {
                   setSelectedEntityId(entityId)
                   setActiveTab('profiles')
                 }}

@@ -50,7 +50,7 @@ export default function ChatTab({ selectedNodeId, onSelectNode }) {
 
   return (
     <section className="tab-panel active chat-tab" role="tabpanel" aria-labelledby="tab-chat">
-      <div className="chat-layout">
+      <div className={`chat-layout ${mode === 'node' ? 'node-mode' : ''}`}>
         {mode === 'node' && (
           <NodeSummarySidebar entityId={selectedNodeId} onChangeEntity={onSelectNode} />
         )}

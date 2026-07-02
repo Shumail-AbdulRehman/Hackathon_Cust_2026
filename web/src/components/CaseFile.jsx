@@ -45,7 +45,10 @@ export default function CaseFile({ profile, graphData, onInvestigateInGraph }) {
             <span className={`risk-chip ${tierClass(profile.risk_tier, TIER_ORDER)}`}>
               {TIER_LABELS[profile.risk_tier] || profile.risk_tier}
             </span>
-            <button className="btn btn-secondary" onClick={onInvestigateInGraph}>
+            <button
+              className="btn btn-secondary"
+              onClick={() => onInvestigateInGraph?.(profile.entity_id)}
+            >
               Investigate in graph
             </button>
           </div>
