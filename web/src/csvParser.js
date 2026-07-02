@@ -1,3 +1,5 @@
+import { csvParse } from 'd3-dsv'
+
 export function parseCsv(text) {
   const rows = []
   let current = ''
@@ -36,4 +38,17 @@ export function parseCsv(text) {
     })
     return item
   })
+}
+
+export async function parsePreview(file, maxRows = 100) {
+  // Read only the first ~50 KB to avoid loading huge files into memory for preview.
+  const previewBytes = 50_000
+  const chunk = file.slice(0, Math.min(previewBytes, file.size))
+  const text = await chunk.text()
+  const all = csvParse(text)
+  const rows = all.slice(0, maxRows).map((row, index) => ({
+    source_row_id: String(index + 1),
+    ...row,
+  }))
+  return { headers: all.columns, rows, totalHint: all.length }
 }
