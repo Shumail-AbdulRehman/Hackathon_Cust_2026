@@ -18,6 +18,8 @@ dependencies = [
     "polars>=1.41.2",
     "blockingpy>=0.2.8",
     "model2vec>=0.8.2",
+    "fastapi>=0.139.0",
+    "uvicorn>=0.49.0",
 ]
 
 [project.optional-dependencies]
@@ -38,6 +40,7 @@ server = [
     "datasets>=2.19",
     # File 3: SLM fine-tuning + GGUF export
     # torch must be installed separately with the correct CUDA wheel for the server GPU.
+    "huggingface-hub>=0.34.0,<1.0",
     "unsloth>=2024.12",
     "transformers>=4.41",
     "trl>=0.9",

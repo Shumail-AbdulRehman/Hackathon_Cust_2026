@@ -7,6 +7,7 @@ taxnet/benford.py
 taxnet/entity_resolution.py
 taxnet/falkor_engine.py
 taxnet/features.py
+taxnet/gnn_scorer.py
 taxnet/graph_engine.py
 taxnet/income_event_alignment.py
 taxnet/ingestion.py
