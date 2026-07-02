@@ -1252,3 +1252,71 @@ td.numeric {
     grid-template-columns: repeat(2, 1fr);
   }
 }
+
+/* Upload feedback */
+.upload-zone.drag-over {
+  border-color: var(--royal-ink);
+  background: oklch(96% 0.02 230);
+}
+
+.upload-progress {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  padding: var(--space-sm) var(--space-lg);
+  color: var(--ink-secondary);
+  font-size: 0.8125rem;
+}
+
+.upload-progress-bar {
+  flex: 1;
+  height: 4px;
+  background: var(--rule-line);
+  border-radius: 2px;
+  overflow: hidden;
+  position: relative;
+}
+
+.upload-progress-bar::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  width: 40%;
+  background: var(--royal-ink);
+  animation: progress-pulse 1s infinite ease-in-out;
+}
+
+@keyframes progress-pulse {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(250%); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .upload-progress-bar::after {
+    animation: none;
+    width: 100%;
+  }
+}
+
+.file-remove {
+  appearance: none;
+  border: none;
+  background: transparent;
+  color: var(--ink-muted);
+  font-size: 1rem;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0 0 0 var(--space-xs);
+}
+
+.file-remove:hover {
+  color: var(--sienna-signal);
+}
+
+.error-state {
+  padding: var(--space-md) var(--space-lg);
+  background: oklch(94% 0.04 30);
+  border: 1px solid oklch(75% 0.12 30);
+  border-radius: var(--radius-md);
+  color: oklch(35% 0.12 30);
+}
