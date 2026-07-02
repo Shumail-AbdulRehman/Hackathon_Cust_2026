@@ -1,5 +1,7 @@
 # tests/test_csv_upload.py
 import io
+from unittest.mock import patch
+
 import pytest
 from taxnet.csv_upload import parse_uploaded_csv
 
@@ -34,3 +36,10 @@ def test_row_limit():
 def test_empty_file():
     with pytest.raises(ValueError, match="no data rows"):
         parse_uploaded_csv(io.BytesIO(b"name\n"), "empty.csv")
+
+
+def test_fallback_row_limit():
+    text = "id\n" + "\n".join(str(i) for i in range(12))
+    with patch("taxnet.csv_upload.pl.read_csv", side_effect=RuntimeError("polars fails")):
+        with pytest.raises(ValueError, match="more than 10 rows"):
+            parse_uploaded_csv(io.BytesIO(text.encode("utf-8")), "big.csv", max_rows=10)

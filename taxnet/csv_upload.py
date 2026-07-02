@@ -4,7 +4,7 @@ from __future__ import annotations
 import csv
 from io import BytesIO, TextIOWrapper
 from pathlib import Path
-from typing import Any, BinaryIO
+from typing import BinaryIO
 
 import polars as pl
 
@@ -16,7 +16,7 @@ def parse_uploaded_csv(
     filename: str,
     *,
     max_rows: int = MAX_ROWS_DEFAULT,
-) -> list[dict[str, Any]]:
+) -> list[dict[str, str]]:
     """Parse an uploaded CSV file into a list of plain dicts.
 
     Uses Polars for speed and falls back to csv.DictReader if Polars fails.
@@ -26,9 +26,12 @@ def parse_uploaded_csv(
     if suffix and suffix not in {".csv", ".tsv", ".txt"}:
         raise ValueError(f"Unsupported file extension: {suffix}")
 
-    sample_bytes = file_like.read(8192)
-    file_like = BytesIO(sample_bytes + file_like.read())
+    # Capture the entire stream in memory so it can be rewound between Polars
+    # and the csv.DictReader fallback.
+    full_bytes = file_like.read()
+    file_like = BytesIO(full_bytes)
 
+    sample_bytes = full_bytes[:8192]
     encoding = "utf-8"
     try:
         sample_text = sample_bytes.decode(encoding)
@@ -37,6 +40,12 @@ def parse_uploaded_csv(
         sample_text = sample_bytes.decode(encoding, errors="replace")
 
     delimiter = _sniff_delimiter(sample_text)
+
+    def _row_limit_message() -> str:
+        return (
+            f"{filename} has more than {max_rows:,} rows. "
+            "Please upload a smaller file or sample it first."
+        )
 
     try:
         df = pl.read_csv(
@@ -49,18 +58,17 @@ def parse_uploaded_csv(
         )
     except Exception as exc:
         try:
+            file_like.seek(0)
             text_io = TextIOWrapper(file_like, encoding=encoding)
             reader = csv.DictReader(text_io, delimiter=delimiter)
             rows = list(reader)
         except Exception:
             raise ValueError(f"Could not parse {filename}: {exc}") from exc
     else:
-        if len(df) > max_rows:
-            raise ValueError(
-                f"{filename} has more than {max_rows:,} rows. "
-                "Please upload a smaller file or sample it first."
-            )
         rows = df.to_dicts()
+
+    if len(rows) > max_rows:
+        raise ValueError(_row_limit_message())
 
     if not rows:
         raise ValueError(f"{filename} contains no data rows.")
