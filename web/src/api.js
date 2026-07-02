@@ -82,3 +82,31 @@ export async function postAskTax(entityId, query, topK = 5) {
   })
   return parseJsonResponse(response)
 }
+
+export async function postUpload(files) {
+  const body = new FormData()
+  files.forEach((file) => body.append('files', file))
+  const response = await fetch(`${API_BASE}/api/upload`, {
+    method: 'POST',
+    body,
+  })
+  return parseJsonResponse(response)
+}
+
+export async function postRunFiles(files, mappings = null) {
+  const body = new FormData()
+  files.forEach((file) => body.append('files', file))
+  if (mappings) {
+    body.append('mappings', JSON.stringify(mappings))
+  }
+  const response = await fetch(`${API_BASE}/api/run-files`, {
+    method: 'POST',
+    body,
+  })
+  return parseJsonResponse(response)
+}
+
+export async function getJobStatus(jobId) {
+  const response = await fetch(`${API_BASE}/api/status/${encodeURIComponent(jobId)}`)
+  return parseJsonResponse(response)
+}
