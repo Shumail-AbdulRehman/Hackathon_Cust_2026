@@ -1,6 +1,14 @@
 import { useEffect, useState } from 'react'
 import { getProfile, getProfiles } from '../api'
 
+function formatPKR(value) {
+  const num = Number(value) || 0
+  if (num >= 1_000_000_000) return `₹${(num / 1_000_000_000).toFixed(2)}B`
+  if (num >= 1_000_000) return `₹${(num / 1_000_000).toFixed(2)}M`
+  if (num >= 1_000) return `₹${(num / 1_000).toFixed(1)}K`
+  return `₹${num.toFixed(0)}`
+}
+
 export default function NodeSummarySidebar({ entityId, onChangeEntity }) {
   const [profile, setProfile] = useState(null)
   const [search, setSearch] = useState('')
@@ -64,8 +72,9 @@ export default function NodeSummarySidebar({ entityId, onChangeEntity }) {
         <div>
           <p className="eyebrow">Node context</p>
           <h2>{profile.canonical_name || profile.entity_id}</h2>
+          <small className="entity-id">{profile.entity_id}</small>
         </div>
-        <span className={`risk-chip ${profile.risk_tier || 'green'}`}>{profile.risk_tier}</span>
+        <span className={`risk-chip ${profile.risk_tier || 'green'}`}>{profile.risk_tier || '—'}</span>
       </div>
       <div className="panel-body">
         <input
@@ -91,12 +100,28 @@ export default function NodeSummarySidebar({ entityId, onChangeEntity }) {
             <span className="score-value">{(profile.risk_score || 0).toFixed(1)}</span>
           </div>
           <div className="score-item">
+            <span className="score-label">Deviation</span>
+            <span className="score-value">{(profile.deviation_score || 0).toFixed(1)}</span>
+          </div>
+          <div className="score-item">
+            <span className="score-label">LLI ratio</span>
+            <span className="score-value">{((profile.lli_ratio ?? profile.aggregate?.lli_ratio) || 0).toFixed(1)}x</span>
+          </div>
+          <div className="score-item">
             <span className="score-label">Proxy label</span>
             <span className="score-value">{(profile.proxy_label || 0).toFixed(1)}</span>
           </div>
           <div className="score-item">
             <span className="score-label">Records</span>
             <span className="score-value">{profile.record_count || 0}</span>
+          </div>
+          <div className="score-item">
+            <span className="score-label">Vehicle value</span>
+            <span className="score-value">{formatPKR(profile.aggregate?.estimated_vehicle_value || 0)}</span>
+          </div>
+          <div className="score-item">
+            <span className="score-label">Property value</span>
+            <span className="score-value">{formatPKR(profile.aggregate?.estimated_property_value || 0)}</span>
           </div>
         </div>
 

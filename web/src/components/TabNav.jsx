@@ -1,9 +1,16 @@
+const LABELS = {
+  overview: 'Overview',
+  profiles: 'Profiles',
+  graph: 'Graph Investigation',
+  chat: 'SLM Chat',
+}
+
 export default function TabNav({ tabs, activeTab, onChange }) {
   return (
     <nav className="tab-nav" role="tablist" aria-label="Primary tabs">
       {tabs.map((tab) => {
         const id = typeof tab === 'string' ? tab : tab.id
-        const label = typeof tab === 'string' ? tab : tab.label
+        const label = LABELS[id] ?? (typeof tab === 'string' ? tab : tab.label)
         const isActive = id === activeTab
         return (
           <button

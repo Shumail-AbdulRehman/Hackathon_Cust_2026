@@ -406,7 +406,10 @@ export default function App() {
                 <GraphCanvas
                   graphData={result?.graph}
                   selectedNodeId={selectedGraphNodeId}
-                  onSelectNode={setSelectedGraphNodeId}
+                  onSelectNode={(entityId) => {
+                    setSelectedGraphNodeId(entityId)
+                    setSelectedEntityId(entityId)
+                  }}
                   visibleNodeTypes={visibleNodeTypes}
                   visibleEdgeTypes={visibleEdgeTypes}
                 />
