@@ -266,22 +266,31 @@ def run(payload: PipelinePayload):
     return compact_result(run_pipeline(datasets=payload.datasets, mappings=payload.mappings))
 
 
-@app.post("/api/upload")
-def upload(files: List[UploadFile] = File(...)):
+def _datasets_from_uploads(files: List[UploadFile]) -> dict[str, list[dict]]:
     datasets: dict[str, list[dict]] = {}
     for upload in files:
-        rows = parse_uploaded_csv(upload.file, upload.filename or "upload.csv")
-        datasets[upload.filename or "upload.csv"] = rows
+        filename = upload.filename or "upload.csv"
+        try:
+            rows = parse_uploaded_csv(upload.file, filename)
+        except ValueError as exc:
+            raise HTTPException(status_code=400, detail=str(exc)) from exc
+        datasets[filename] = rows
+    return datasets
+
+
+@app.post("/api/upload")
+def upload(files: List[UploadFile] = File(...)):
+    datasets = _datasets_from_uploads(files)
     return {"profiles": profile_datasets(datasets)}
 
 
 @app.post("/api/run-files")
 def run_files(files: List[UploadFile] = File(...), mappings: str = Form("{}")):
-    datasets: dict[str, list[dict]] = {}
-    for upload in files:
-        rows = parse_uploaded_csv(upload.file, upload.filename or "upload.csv")
-        datasets[upload.filename or "upload.csv"] = rows
-    parsed_mappings = json.loads(mappings) if mappings else {}
+    datasets = _datasets_from_uploads(files)
+    try:
+        parsed_mappings = json.loads(mappings) if mappings else {}
+    except json.JSONDecodeError as exc:
+        raise HTTPException(status_code=400, detail="Invalid mappings JSON") from exc
     result = run_pipeline(datasets=datasets, mappings=parsed_mappings, use_ml=True)
     compact = compact_result(result)
     compact["ml_used"] = result["scoring"]["summary"].get("ml_used", False)

@@ -42,4 +42,27 @@ def test_status():
     client = TestClient(server.app)
     response = client.get("/api/status/test-job")
     assert response.status_code == 200
-    assert response.json()["status"] == "done"
+    data = response.json()
+    assert data["status"] == "done"
+    assert data["job_id"] == "test-job"
+
+
+def test_upload_invalid_extension():
+    client = TestClient(server.app)
+    xlsx_bytes = b"PK\x03\x04fake xlsx content"
+    response = client.post(
+        "/api/upload",
+        files={"files": ("data.xlsx", io.BytesIO(xlsx_bytes), "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")},
+    )
+    assert response.status_code == 400
+
+
+def test_run_files_invalid_mappings():
+    client = TestClient(server.app)
+    csv_bytes = b"full_name,declared_income_pkr,tax_paid_pkr,filer_status\nAlice,50000,2000,Filer\n"
+    response = client.post(
+        "/api/run-files",
+        files={"files": ("tax.csv", io.BytesIO(csv_bytes), "text/csv")},
+        data={"mappings": "not-json"},
+    )
+    assert response.status_code == 400
