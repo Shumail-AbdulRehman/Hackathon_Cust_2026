@@ -9,11 +9,12 @@ from contextlib import asynccontextmanager
 from pathlib import Path
 from typing import Dict, List, Optional
 
-from fastapi import FastAPI, HTTPException, Query
+from fastapi import FastAPI, File, Form, HTTPException, Query, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
 from slm.vectorless_law_rag import LawRetriever
+from taxnet.csv_upload import parse_uploaded_csv
 from taxnet.ingestion import profile_datasets
 from taxnet.pipeline import compact_result, run_benchmark, run_pipeline
 
@@ -263,6 +264,33 @@ def profile(payload: PipelinePayload):
 @app.post("/api/run")
 def run(payload: PipelinePayload):
     return compact_result(run_pipeline(datasets=payload.datasets, mappings=payload.mappings))
+
+
+@app.post("/api/upload")
+def upload(files: List[UploadFile] = File(...)):
+    datasets: dict[str, list[dict]] = {}
+    for upload in files:
+        rows = parse_uploaded_csv(upload.file, upload.filename or "upload.csv")
+        datasets[upload.filename or "upload.csv"] = rows
+    return {"profiles": profile_datasets(datasets)}
+
+
+@app.post("/api/run-files")
+def run_files(files: List[UploadFile] = File(...), mappings: str = Form("{}")):
+    datasets: dict[str, list[dict]] = {}
+    for upload in files:
+        rows = parse_uploaded_csv(upload.file, upload.filename or "upload.csv")
+        datasets[upload.filename or "upload.csv"] = rows
+    parsed_mappings = json.loads(mappings) if mappings else {}
+    result = run_pipeline(datasets=datasets, mappings=parsed_mappings, use_ml=True)
+    compact = compact_result(result)
+    compact["ml_used"] = result["scoring"]["summary"].get("ml_used", False)
+    return compact
+
+
+@app.get("/api/status/{job_id}")
+def job_status(job_id: str):
+    return {"job_id": job_id, "status": "done"}
 
 
 @app.get("/api/profiles")
