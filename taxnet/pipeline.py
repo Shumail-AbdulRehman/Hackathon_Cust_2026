@@ -13,9 +13,9 @@ from .scoring import score_entities
 from .synthetic import generate_synthetic_datasets
 
 try:
-    from .ml_scorer import train_model
+    from .ml_scorer import load_pretrained_model
 except Exception:
-    train_model = None  # type: ignore[assignment]
+    load_pretrained_model = None  # type: ignore[assignment]
 
 
 def run_pipeline(
@@ -24,6 +24,7 @@ def run_pipeline(
     synthetic_seed: int = 42,
     use_ml: bool = True,
     use_ann_blocking: bool = False,
+    ml_model: Any | None = None,
 ) -> dict[str, Any]:
     start = time.perf_counter()
     if datasets is None:
@@ -45,12 +46,14 @@ def run_pipeline(
     except Exception as exc:
         falkor_summary = {"error": str(exc)}
 
-    ml_model = None
-    if use_ml and train_model is not None:
-        try:
-            ml_model = train_model(graph, resolution, falkor_summary)
-        except Exception:
-            ml_model = None
+    if use_ml:
+        if ml_model is None and load_pretrained_model is not None:
+            try:
+                ml_model = load_pretrained_model()
+            except Exception:
+                ml_model = None
+    else:
+        ml_model = None
 
     scoring = score_entities(graph, resolution, ml_model=ml_model, falkor_summary=falkor_summary)
     t_score = time.perf_counter()

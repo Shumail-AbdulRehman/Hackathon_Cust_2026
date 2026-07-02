@@ -356,6 +356,7 @@ def score_entities(
             )
             if profiles
             else 0,
+            "ml_used": ml_model is not None,
         },
     }
 
