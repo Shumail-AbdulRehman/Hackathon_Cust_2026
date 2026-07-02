@@ -43,6 +43,21 @@ data/pakistani-tax-data/*.xlsx
 data/pakistani-tax-data/API_*/
 
 # Keep small sample CSVs in data/cust-csv
+
+# Large model / embedding / index artifacts
+*.gguf
+*.gguf.*
+*.pkl
+*.faiss
+*.zip
+slm/models/
+slm/library/index.pkl
+slm/my-trained-models/*.gguf
+slm/my-trained-models/*.zip
+server_artifacts/law_rag/law_index.faiss
+server_artifacts/ml/entity_profiles.jsonl
+server_artifacts/ml/raw_downloads/
+
 # Logs
 *.log
 logs/
@@ -50,6 +65,9 @@ logs/
 # OS
 .DS_Store
 Thumbs.db
+
+# Worktrees
+.worktrees/
 
 # Temporary files
 /tmp/
