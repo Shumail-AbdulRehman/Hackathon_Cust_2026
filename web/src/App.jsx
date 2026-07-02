@@ -28,7 +28,6 @@ const TABS = ['overview', 'profiles', 'graph', 'chat']
 export default function App() {
   const [activeTab, setActiveTab] = useState('overview')
   const [result, setResult] = useState(null)
-  const [uploaded, setUploaded] = useState({})
   const [uploadFiles, setUploadFiles] = useState([])
   const [uploadProgress, setUploadProgress] = useState(null)
   const [uploadProfiles, setUploadProfiles] = useState([])
