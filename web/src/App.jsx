@@ -5,8 +5,10 @@ import {
   getBenchmark,
   postProfile,
   postRun,
+  postUpload,
+  postRunFiles,
 } from './api'
-import { parseCsv } from './csvParser'
+import { parsePreview } from './csvParser'
 import { TIER_LABELS, TIER_ORDER, NODE_TYPES, EDGE_TYPES } from './constants'
 import Header from './components/Header'
 import TabNav from './components/TabNav'
@@ -29,6 +31,8 @@ export default function App() {
   const [activeTab, setActiveTab] = useState('overview')
   const [result, setResult] = useState(null)
   const [uploaded, setUploaded] = useState({})
+  const [uploadFiles, setUploadFiles] = useState([])
+  const [uploadProgress, setUploadProgress] = useState(null)
   const [uploadProfiles, setUploadProfiles] = useState([])
   const [mappings, setMappings] = useState({})
   const [loading, setLoading] = useState(false)
@@ -97,18 +101,21 @@ export default function App() {
 
   const handleFiles = useCallback(async (files) => {
     if (!files || files.length === 0) return
+    const oversized = Array.from(files).find((f) => f.size > 100 * 1024 * 1024)
+    if (oversized) {
+      setError(`File too large: ${oversized.name}. Max size is 100 MB.`)
+      return
+    }
     setLoading(true)
     setError(null)
     setPipelineStep('ingest')
     try {
-      const loaded = {}
-      for (const file of files) {
-        const text = await file.text()
-        loaded[file.name] = parseCsv(text)
-      }
-      const nextUploaded = { ...uploaded, ...loaded }
-      setUploaded(nextUploaded)
-      const response = await postProfile(nextUploaded)
+      setUploadProgress('Reading preview…')
+      await Promise.all(Array.from(files).map((f) => parsePreview(f, 100)))
+      setUploadFiles((prev) => [...prev, ...Array.from(files)])
+
+      setUploadProgress('Uploading…')
+      const response = await postUpload(Array.from(files))
       const profiles = response.profiles || []
       setUploadProfiles(profiles)
       const initialMappings = {}
@@ -128,12 +135,12 @@ export default function App() {
       handleError(err)
     } finally {
       setLoading(false)
+      setUploadProgress(null)
     }
-  }, [uploaded, handleError, showToast])
+  }, [handleError, showToast])
 
   const handleRunUploaded = useCallback(async () => {
-    const names = Object.keys(uploaded)
-    if (names.length === 0) {
+    if (uploadFiles.length === 0) {
       showToast('Load one or more CSV files first.')
       return
     }
@@ -143,23 +150,24 @@ export default function App() {
     try {
       const payload = {}
       Object.entries(mappings).forEach(([name, data]) => {
-        payload[name] = {
-          _kind: data.detected_kind,
-          ...data.fields,
-        }
+        payload[name] = { _kind: data.detected_kind, ...data.fields }
       })
-      const data = await postRun(uploaded, payload)
+      const data = await postRunFiles(uploadFiles, payload)
       setResult(data)
       setPipelineStep('score')
-      setSelectedEntityId(data.scoring?.flagged_profiles?.[0]?.entity_id || data.scoring?.profiles?.[0]?.entity_id || null)
+      setSelectedEntityId(
+        data.scoring?.flagged_profiles?.[0]?.entity_id ||
+        data.scoring?.profiles?.[0]?.entity_id ||
+        null
+      )
       setActiveTab('profiles')
-      showToast('Uploaded files processed')
+      showToast(`Uploaded files processed${data.ml_used ? ' with XGBoost' : ''}`)
     } catch (err) {
       handleError(err)
     } finally {
       setLoading(false)
     }
-  }, [uploaded, mappings, handleError, showToast])
+  }, [uploadFiles, mappings, handleError, showToast])
 
   const handleExport = useCallback(() => {
     if (!result) return
@@ -311,13 +319,30 @@ export default function App() {
                     </div>
                   </div>
                   <UploadZone onFiles={handleFiles} />
-                  {Object.keys(uploaded).length > 0 && (
+                  {uploadFiles.length > 0 && (
                     <div className="uploaded-files">
-                      {Object.entries(uploaded).map(([name, rows]) => (
-                        <span key={name} className="file-tag">
-                          {name} <small>({rows.length} rows)</small>
+                      {uploadFiles.map((file, index) => (
+                        <span key={`${file.name}-${index}`} className="file-tag">
+                          {file.name}
+                          <button
+                            type="button"
+                            className="file-remove"
+                            onClick={() => {
+                              setUploadFiles((prev) => prev.filter((_, i) => i !== index))
+                              setUploadProfiles((prev) => prev.filter((_, i) => i !== index))
+                            }}
+                            aria-label={`Remove ${file.name}`}
+                          >
+                            ×
+                          </button>
                         </span>
                       ))}
+                    </div>
+                  )}
+                  {uploadProgress && (
+                    <div className="upload-progress" aria-live="polite">
+                      <div className="upload-progress-bar" />
+                      <span>{uploadProgress}</span>
                     </div>
                   )}
                 </section>
