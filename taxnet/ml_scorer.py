@@ -4,6 +4,8 @@ from __future__ import annotations
 
 from typing import Any
 
+from pathlib import Path
+
 import numpy as np
 import shap
 import xgboost as xgb
@@ -95,6 +97,23 @@ def make_training_data(
         ids.append(entity_id)
 
     return np.array(X), np.array(y), ids
+
+
+def load_pretrained_model(path: str = "server_artifacts/ml/ml_model.json") -> xgb.XGBRegressor | None:
+    """Load a previously trained XGBoost model from disk."""
+    p = Path(path)
+    if not p.exists():
+        return None
+    try:
+        model = xgb.XGBRegressor()
+        # Work around xgboost builds where the regressor mixin does not set
+        # _estimator_type, causing load_model to raise TypeError.
+        if not hasattr(model, "_estimator_type"):
+            model._estimator_type = "regressor"
+        model.load_model(str(p))
+        return model
+    except Exception:
+        return None
 
 
 def train_model(
