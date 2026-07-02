@@ -1,3 +1,5 @@
+/* global d3 */
+
 const state = {
   result: null,
   selectedId: null,
@@ -46,10 +48,8 @@ const FIELD_LABELS = {
   property_type: "Property type",
 };
 
-const KIND_OPTIONS = ["tax", "vehicle", "utility", "property", "generic"];
 const TIER_ORDER = ["critical", "red", "orange", "yellow", "green"];
 const TIER_LABELS = { critical: "Critical", red: "High", orange: "Medium", yellow: "Low", green: "Clean" };
-const DISPLAY_TIER_ORDER = ["critical", "red", "orange"];
 
 const NODE_TYPES = [
   { key: "Person", label: "Person", color: "#1a2b4a", shape: "circle" },
