@@ -3,8 +3,6 @@ import { useState, useCallback, useMemo } from 'react'
 import {
   getDemo,
   getBenchmark,
-  postProfile,
-  postRun,
   postUpload,
   postRunFiles,
 } from './api'
