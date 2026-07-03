@@ -1336,11 +1336,11 @@ td.numeric {
   min-width: 220px;
   max-width: 320px;
   padding: var(--space-sm) var(--space-md);
-  background: var(--panel-surface);
+  background: var(--paper-surface);
   border: 1px solid var(--rule-line);
   border-radius: var(--radius-md);
-  box-shadow: var(--shadow-md);
-  color: var(--ink-primary);
+  box-shadow: 0 4px 24px oklch(0.3 0.02 230 / 0.14);
+  color: var(--ink);
   font-size: 0.8125rem;
   line-height: 1.4;
   z-index: 100;
@@ -1355,5 +1355,5 @@ td.numeric {
   margin-left: -6px;
   border-width: 6px;
   border-style: solid;
-  border-color: var(--panel-surface) transparent transparent transparent;
+  border-color: var(--paper-surface) transparent transparent transparent;
 }
