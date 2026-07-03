@@ -243,16 +243,6 @@ body {
   background: var(--paper-surface-2);
 }
 
-.btn-ghost {
-  background: transparent;
-  color: var(--ink-muted);
-}
-
-.btn-ghost:hover:not(:disabled) {
-  background: var(--paper-surface-2);
-  color: var(--ink);
-}
-
 .btn:focus-visible,
 .file-button:focus-within {
   outline: 2px solid var(--royal-ink);
