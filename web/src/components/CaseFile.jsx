@@ -3,7 +3,7 @@ import { formatPKR, tierClass } from './chartUtils'
 import AssetTimelineChart from './AssetTimelineChart'
 import BenfordChart from './BenfordChart'
 import EgoGraph from './EgoGraph'
-import ScoreComponentsChart from './ScoreComponentsChart'
+import RiskCompositionWaterfall from '../charts/RiskCompositionWaterfall'
 import SourceMixChart from './SourceMixChart'
 import Tooltip from './Tooltip'
 
@@ -131,7 +131,7 @@ export default function CaseFile({ profile, graphData, onInvestigateInGraph }) {
           <h3>Score breakdown</h3>
         </div>
         <div className="case-section-body">
-          <ScoreComponentsChart profile={profile} />
+          <RiskCompositionWaterfall profile={profile} />
         </div>
       </section>
 
