@@ -1320,3 +1320,40 @@ td.numeric {
   border-radius: var(--radius-md);
   color: oklch(35% 0.12 30);
 }
+
+.tooltip-wrap {
+  position: relative;
+  display: inline-block;
+  border-bottom: 1px dashed var(--ink-muted);
+  cursor: help;
+}
+
+.tooltip-popup {
+  position: absolute;
+  bottom: calc(100% + 8px);
+  left: 50%;
+  transform: translateX(-50%);
+  min-width: 220px;
+  max-width: 320px;
+  padding: var(--space-sm) var(--space-md);
+  background: var(--panel-surface);
+  border: 1px solid var(--rule-line);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-md);
+  color: var(--ink-primary);
+  font-size: 0.8125rem;
+  line-height: 1.4;
+  z-index: 100;
+  pointer-events: none;
+}
+
+.tooltip-popup::after {
+  content: '';
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  margin-left: -6px;
+  border-width: 6px;
+  border-style: solid;
+  border-color: var(--panel-surface) transparent transparent transparent;
+}
