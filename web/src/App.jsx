@@ -345,6 +345,16 @@ export default function App() {
                       <h2>Load data</h2>
                     </div>
                   </div>
+                  {uploadFiles.length === 0 && !result && (
+                    <div className="upload-steps">
+                      <h3>Get started</h3>
+                      <ol>
+                        <li>Drop one or more CSV files.</li>
+                        <li>Review the detected column mappings.</li>
+                        <li>Click <strong>Run uploaded</strong> to score entities.</li>
+                      </ol>
+                    </div>
+                  )}
                   <UploadZone onFiles={handleFiles} />
                   {uploadFiles.length > 0 && (
                     <div className="uploaded-files">

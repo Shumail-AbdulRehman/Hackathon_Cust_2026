@@ -1470,3 +1470,25 @@ td.numeric {
     width: 100%;
   }
 }
+
+.upload-steps {
+  padding: var(--space-lg);
+  background: var(--paper-surface);
+  border: 1px solid var(--rule-line);
+  border-radius: var(--radius-md);
+  margin-bottom: var(--space-lg);
+}
+
+.upload-steps h3 {
+  margin-bottom: var(--space-sm);
+}
+
+.upload-steps ol {
+  margin: 0;
+  padding-left: var(--space-lg);
+  color: var(--ink-secondary);
+}
+
+.upload-steps li {
+  margin-bottom: var(--space-xs);
+}
