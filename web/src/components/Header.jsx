@@ -1,4 +1,5 @@
-export default function Header({ children }) {
+// web/src/components/Header.jsx
+export default function Header({ children, onRunDemo }) {
   return (
     <header className="topbar">
       <div className="brand">
@@ -8,7 +9,14 @@ export default function Header({ children }) {
           <h1 className="brand-title">TaxNet XAI</h1>
         </div>
       </div>
-      <div className="top-actions">{children}</div>
+      <div className="top-actions">
+        {onRunDemo && (
+          <button className="btn btn-primary btn-small" onClick={onRunDemo}>
+            Run demo
+          </button>
+        )}
+        {children}
+      </div>
     </header>
   )
 }

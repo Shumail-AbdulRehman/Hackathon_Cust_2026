@@ -292,7 +292,7 @@ export default function App() {
           }}
         />
       )}
-      <Header>
+      <Header onRunDemo={runDemo}>
         <button className="btn btn-primary" onClick={runDemo} disabled={loading}>
           Run synthetic audit
         </button>
