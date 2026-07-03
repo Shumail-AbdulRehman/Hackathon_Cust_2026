@@ -3,10 +3,28 @@ import * as d3 from 'd3'
 import { EDGE_TYPES, NODE_TYPES } from '../constants'
 import { getChartSize } from './chartUtils'
 
+const TIER_COLORS = {
+  green: '#3d6b52',
+  yellow: '#c88a2a',
+  orange: '#c14528',
+  red: '#a64b2a',
+  critical: '#7a2e1d',
+}
+
+function nodeFill(d) {
+  const tier = d.risk_tier || 'green'
+  return TIER_COLORS[tier] || '#9e9a8e'
+}
+
+function nodeStroke(d) {
+  const color = nodeFill(d)
+  return d3.color(color).darker(0.6).formatHex()
+}
+
 function nodeRadius(d) {
-  if (d.type === 'Person') return 14
-  if (d.type === 'AddressHub' || d.type === 'PhoneHub') return 8
-  return 10
+  const base = d.type === 'Person' ? 16 : d.type === 'AddressHub' || d.type === 'PhoneHub' ? 7 : 10
+  const score = d.deviation_score || 0
+  return base + Math.min(score / 10, 8)
 }
 
 function nodeShapePath(d) {
@@ -77,6 +95,13 @@ export default function GraphCanvas({
 
     const svg = d3.select(container).append('svg').attr('width', width).attr('height', height).attr('viewBox', [0, 0, width, height])
 
+    const legend = d3.select(container).append('div').attr('class', 'graph-legend')
+    Object.entries(TIER_COLORS).forEach(([tier, color]) => {
+      const item = legend.append('div').attr('class', 'graph-legend-item')
+      item.append('span').attr('class', 'graph-legend-swatch').style('background', color)
+      item.append('span').text(tier)
+    })
+
     const tooltip = d3.select(container).append('div').attr('class', 'graph-tooltip')
 
     const g = svg.append('g')
@@ -140,7 +165,8 @@ export default function GraphCanvas({
       .join('path')
       .attr('class', (d) => `graph-node ${d.id === selectedNodeId ? 'selected' : ''}`)
       .attr('d', (d) => nodeShapePath(d))
-      .attr('fill', (d) => NODE_TYPES.find((t) => t.key === d.type)?.color || '#5e5c58')
+      .attr('fill', nodeFill)
+      .attr('stroke', nodeStroke)
       .attr('transform', (d) => `translate(${d.x || width / 2},${d.y || height / 2})`)
       .call(
         d3
