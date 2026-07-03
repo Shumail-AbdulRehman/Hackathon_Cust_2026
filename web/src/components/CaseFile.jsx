@@ -5,6 +5,7 @@ import BenfordChart from './BenfordChart'
 import EgoGraph from './EgoGraph'
 import ScoreComponentsChart from './ScoreComponentsChart'
 import SourceMixChart from './SourceMixChart'
+import Tooltip from './Tooltip'
 
 function safe(value) {
   if (value === null || value === undefined) return ''
@@ -55,17 +56,23 @@ export default function CaseFile({ profile, graphData, onInvestigateInGraph }) {
         </div>
         <div className="score-grid">
           <div className="score-item">
-            <span className="score-label">Deviation score</span>
+            <span className="score-label">
+              <Tooltip term="Deviation score">Deviation score</Tooltip>
+            </span>
             <span className={`score-value ${tierClass(profile.risk_tier, TIER_ORDER)}`}>
               {(profile.deviation_score ?? 0).toFixed(1)}
             </span>
           </div>
           <div className="score-item">
-            <span className="score-label">Direct risk</span>
+            <span className="score-label">
+              <Tooltip term="Direct risk">Direct risk</Tooltip>
+            </span>
             <span className="score-value">{(profile.direct_score ?? 0).toFixed(1)}</span>
           </div>
           <div className="score-item">
-            <span className="score-label">LLI ratio</span>
+            <span className="score-label">
+              <Tooltip term="LLI ratio">LLI ratio</Tooltip>
+            </span>
             <span className={`score-value ${lliClass}`}>{lliRatio.toFixed(1)}x</span>
           </div>
           <div className="score-item">
@@ -82,6 +89,31 @@ export default function CaseFile({ profile, graphData, onInvestigateInGraph }) {
           </div>
         </div>
       </header>
+
+      <section className="case-section why-flagged">
+        <div className="case-section-header">
+          <h3>Why is this flagged?</h3>
+        </div>
+        <div className="case-section-body">
+          {profile.flagged ? (
+            <>
+              <p className="why-summary">{buildWhySummary(profile)}</p>
+              <ul className="why-reasons">
+                {buildWhyReasons(profile).map((reason, i) => (
+                  <li key={i}>
+                    <span className={`why-badge ${reason.kind}`}>{reason.kind}</span>
+                    {reason.text}
+                  </li>
+                ))}
+              </ul>
+            </>
+          ) : (
+            <p className="why-summary not-flagged">
+              This profile does not currently exceed risk thresholds.
+            </p>
+          )}
+        </div>
+      </section>
 
       <section className="case-section">
         <div className="case-section-header">
@@ -153,6 +185,42 @@ export default function CaseFile({ profile, graphData, onInvestigateInGraph }) {
       </section>
     </div>
   )
+}
+
+function buildWhySummary(profile) {
+  const name = profile.name || profile.canonical_name || 'This entity'
+  const basis = profile.risk_basis
+  if (basis === 'associate-linked') {
+    return `${name} is flagged primarily because of risky connections to other entities.`
+  }
+  if (basis === 'direct') {
+    return `${name} is flagged because its own records show unusual income, asset, or lifestyle patterns.`
+  }
+  if (basis === 'mixed') {
+    return `${name} is flagged due to both direct risk signals and risky connections.`
+  }
+  return `${name} is flagged for audit review.`
+}
+
+function buildWhyReasons(profile) {
+  const reasons = []
+  if (profile.deviation_score > 40) {
+    reasons.push({ kind: 'direct', text: `High deviation score (${profile.deviation_score.toFixed(1)})` })
+  }
+  if ((profile.associate_proxy_score || 0) > 30) {
+    reasons.push({ kind: 'proxy', text: `Risky associates (proxy score ${profile.associate_proxy_score.toFixed(1)})` })
+  }
+  if ((profile.ml_score || 0) > 0.5) {
+    reasons.push({ kind: 'ml', text: 'Machine-learning model flagged this profile' })
+  }
+  const lli = profile.aggregate?.lli_ratio || 0
+  if (lli > 1.5) {
+    reasons.push({ kind: 'lifestyle', text: `Lifestyle spending exceeds declared income (LLI ${lli.toFixed(1)}x)` })
+  }
+  if (!reasons.length && profile.direct_reasons?.length) {
+    reasons.push({ kind: 'direct', text: profile.direct_reasons[0] })
+  }
+  return reasons.slice(0, 3)
 }
 
 function GeoChips({ sourceRows }) {

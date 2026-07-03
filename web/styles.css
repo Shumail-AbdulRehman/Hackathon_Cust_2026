@@ -1497,3 +1497,45 @@ td.numeric {
 .upload-steps li {
   margin-bottom: var(--space-xs);
 }
+
+.why-flagged .why-summary {
+  font-size: 1rem;
+  color: var(--ink);
+  margin-bottom: var(--space-md);
+}
+
+.why-summary.not-flagged {
+  color: var(--ink-secondary);
+}
+
+.why-reasons {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+}
+
+.why-reasons li {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  color: var(--ink-secondary);
+}
+
+.why-badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: var(--radius-sm);
+  font-size: 0.6875rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  white-space: nowrap;
+}
+
+.why-badge.direct { background: oklch(90% 0.08 25); color: oklch(40% 0.14 25); }
+.why-badge.proxy { background: oklch(90% 0.06 55); color: oklch(40% 0.12 55); }
+.why-badge.ml { background: oklch(90% 0.05 270); color: oklch(35% 0.12 270); }
+.why-badge.lifestyle { background: oklch(90% 0.05 150); color: oklch(30% 0.1 150); }
