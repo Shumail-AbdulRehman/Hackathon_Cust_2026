@@ -1357,3 +1357,69 @@ td.numeric {
   border-style: solid;
   border-color: var(--paper-surface) transparent transparent transparent;
 }
+
+.onboarding-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(30, 30, 36, 0.55);
+  backdrop-filter: blur(2px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 200;
+}
+
+.onboarding-card {
+  position: relative;
+  max-width: 520px;
+  padding: var(--space-xl);
+  background: var(--paper-surface);
+  border: 1px solid var(--rule-line);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 16px 48px oklch(0.25 0.03 230 / 0.22);
+  text-align: center;
+}
+
+.onboarding-card .brand-mark.large {
+  width: 56px;
+  height: 56px;
+  font-size: 1.75rem;
+  margin: 0 auto var(--space-md);
+}
+
+.onboarding-card h2 {
+  margin-bottom: var(--space-sm);
+}
+
+.onboarding-subhead {
+  color: var(--ink-secondary);
+  margin-bottom: var(--space-lg);
+}
+
+.onboarding-actions {
+  display: flex;
+  gap: var(--space-md);
+  justify-content: center;
+  flex-wrap: wrap;
+  margin-bottom: var(--space-lg);
+}
+
+.onboarding-checkbox {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-xs);
+  color: var(--ink-secondary);
+  font-size: 0.8125rem;
+}
+
+.onboarding-close {
+  position: absolute;
+  top: var(--space-md);
+  right: var(--space-md);
+  appearance: none;
+  border: none;
+  background: transparent;
+  font-size: 1.5rem;
+  color: var(--ink-muted);
+  cursor: pointer;
+}

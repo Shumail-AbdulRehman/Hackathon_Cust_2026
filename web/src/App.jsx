@@ -1,4 +1,4 @@
-import { useState, useCallback, useMemo } from 'react'
+import { useState, useEffect, useCallback, useMemo } from 'react'
 
 import {
   getDemo,
@@ -22,6 +22,7 @@ import GraphCanvas from './components/GraphCanvas'
 import GraphControls from './components/GraphControls'
 import GraphDetail from './components/GraphDetail'
 import ChatTab from './components/ChatTab'
+import OnboardingOverlay from './components/OnboardingOverlay'
 
 const TABS = ['overview', 'profiles', 'graph', 'chat']
 
@@ -39,8 +40,17 @@ export default function App() {
   const [selectedGraphNodeId, setSelectedGraphNodeId] = useState(null)
   const [pipelineStep, setPipelineStep] = useState('ingest')
   const [benchmarkCitizens, setBenchmarkCitizens] = useState(500)
+  const [onboardingDismissed, setOnboardingDismissed] = useState(
+    () => localStorage.getItem('taxnet-onboarding-dismissed') === 'true'
+  )
   const [visibleNodeTypes, setVisibleNodeTypes] = useState(() => new Set(NODE_TYPES.map((t) => t.key)))
   const [visibleEdgeTypes, setVisibleEdgeTypes] = useState(() => new Set(EDGE_TYPES.map((t) => t.key)))
+
+  useEffect(() => {
+    const onDismiss = () => setOnboardingDismissed(true)
+    window.addEventListener('taxnet-onboarding-dismissed', onDismiss)
+    return () => window.removeEventListener('taxnet-onboarding-dismissed', onDismiss)
+  }, [])
 
   const profiles = result?.scoring?.profiles || []
   const flaggedProfiles = result?.scoring?.flagged_profiles || []
@@ -263,6 +273,12 @@ export default function App() {
   return (
     <>
       <a href="#main-content" className="skip-link">Skip to main content</a>
+      {!onboardingDismissed && !result && (
+        <OnboardingOverlay
+          onRunDemo={runDemo}
+          onUpload={() => document.getElementById('topbar-file-input')?.click()}
+        />
+      )}
       <Header>
         <button className="btn btn-primary" onClick={runDemo} disabled={loading}>
           Run synthetic audit
@@ -270,6 +286,7 @@ export default function App() {
         <label className="btn btn-secondary file-button">
           Upload CSVs
           <input
+            id="topbar-file-input"
             type="file"
             multiple
             accept=".csv"
