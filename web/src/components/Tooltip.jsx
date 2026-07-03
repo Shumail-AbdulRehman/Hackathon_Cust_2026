@@ -14,6 +14,7 @@ const DEFINITIONS = {
 export default function Tooltip({ term, children }) {
   const [visible, setVisible] = useState(false)
   const text = DEFINITIONS[term]
+  const id = `tip-${term.toLowerCase().replace(/\s+/g, '-')}`
   if (!text) return children
 
   return (
@@ -24,11 +25,11 @@ export default function Tooltip({ term, children }) {
       onFocus={() => setVisible(true)}
       onBlur={() => setVisible(false)}
       tabIndex={0}
-      aria-describedby={`tip-${term}`}
+      aria-describedby={id}
     >
       {children}
       {visible && (
-        <span id={`tip-${term}`} className="tooltip-popup" role="tooltip">
+        <span id={id} className="tooltip-popup" role="tooltip">
           {text}
         </span>
       )}
