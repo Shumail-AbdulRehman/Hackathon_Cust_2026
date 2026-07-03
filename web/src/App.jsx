@@ -267,15 +267,6 @@ export default function App() {
           onUpload={() => document.getElementById('topbar-file-input')?.click()}
         />
       )}
-      {onboardingDismissed && !helperBannerDismissed && !result && (
-        <HelperBanner
-          onRunDemo={runDemo}
-          onDismiss={() => {
-            localStorage.setItem('taxnet-helper-banner-dismissed', 'true')
-            setHelperBannerDismissed(true)
-          }}
-        />
-      )}
       <Header onRunDemo={runDemo}>
         <button className="btn btn-primary" onClick={runDemo} disabled={loading}>
           Run synthetic audit
@@ -319,8 +310,17 @@ export default function App() {
         {activeTab === 'overview' && (
           <section className="tab-panel active" role="tabpanel" aria-labelledby="tab-overview">
             <div className="overview-layout">
+              {onboardingDismissed && !helperBannerDismissed && !result && (
+                <HelperBanner
+                  onRunDemo={runDemo}
+                  onDismiss={() => {
+                    localStorage.setItem('taxnet-helper-banner-dismissed', 'true')
+                    setHelperBannerDismissed(true)
+                  }}
+                />
+              )}
               <PipelineStrip step={pipelineStep} />
-              <MetricsRow metrics={metrics} loading={loading} />
+              {result && <MetricsRow metrics={metrics} loading={loading} />}
               {result && (
                 <section className="overview-charts">
                   <SourceFlowSankey profiles={profiles} />
@@ -414,21 +414,29 @@ export default function App() {
 
         {activeTab === 'profiles' && (
           <section className="tab-panel active" role="tabpanel" aria-labelledby="tab-profiles">
-            <div className="profiles-layout">
-              <ProfileQueue
-                profiles={flaggedProfiles}
-                selectedId={selectedEntityId}
-                onSelect={setSelectedEntityId}
-              />
-              <CaseFile
-                profile={selectedProfile}
-                graphData={result?.graph}
-                onInvestigateInGraph={(entityId) => {
-                  setSelectedGraphNodeId(entityId)
-                  setActiveTab('graph')
-                }}
-              />
-            </div>
+            {!result ? (
+              <p className="empty-state">No investigation yet. Run the demo or upload CSVs to see flagged profiles.</p>
+            ) : (
+              <div className="profiles-layout">
+                <ProfileQueue
+                  profiles={flaggedProfiles}
+                  selectedId={selectedEntityId}
+                  onSelect={setSelectedEntityId}
+                />
+                {selectedProfile ? (
+                  <CaseFile
+                    profile={selectedProfile}
+                    graphData={result?.graph}
+                    onInvestigateInGraph={(entityId) => {
+                      setSelectedGraphNodeId(entityId)
+                      setActiveTab('graph')
+                    }}
+                  />
+                ) : (
+                  <p className="empty-state">Select a profile from the queue to view its case file.</p>
+                )}
+              </div>
+            )}
           </section>
         )}
 

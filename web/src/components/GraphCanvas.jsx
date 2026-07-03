@@ -67,7 +67,7 @@ export default function GraphCanvas({
     const graph = graphData || { nodes: [], edges: [] }
 
     if (!graph.nodes.length) {
-      container.innerHTML = '<p class="empty-state" style="padding:48px;">Run the pipeline to load the network.</p>'
+      container.innerHTML = '<p class="empty-state" style="padding:48px;">Run an investigation to build the network graph.</p>'
       onStatsChange?.('0 nodes · 0 edges')
       return
     }

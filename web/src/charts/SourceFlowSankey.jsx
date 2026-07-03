@@ -33,7 +33,6 @@ export default function SourceFlowSankey({ profiles }) {
     const height = 220
     const margin = { top: 20, right: 120, bottom: 20, left: 20 }
     const innerW = width - margin.left - margin.right
-    const innerH = height - margin.top - margin.bottom
 
     const svg = d3.select(container).append('svg')
       .attr('viewBox', `0 0 ${width} ${height}`)
