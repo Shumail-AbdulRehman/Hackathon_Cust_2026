@@ -23,6 +23,7 @@ import GraphControls from './components/GraphControls'
 import GraphDetail from './components/GraphDetail'
 import ChatTab from './components/ChatTab'
 import OnboardingOverlay from './components/OnboardingOverlay'
+import HelperBanner from './components/HelperBanner'
 
 const TABS = ['overview', 'profiles', 'graph', 'chat']
 
@@ -42,6 +43,9 @@ export default function App() {
   const [benchmarkCitizens, setBenchmarkCitizens] = useState(500)
   const [onboardingDismissed, setOnboardingDismissed] = useState(
     () => localStorage.getItem('taxnet-onboarding-dismissed') === 'true'
+  )
+  const [helperBannerDismissed, setHelperBannerDismissed] = useState(
+    () => localStorage.getItem('taxnet-helper-banner-dismissed') === 'true'
   )
   const [visibleNodeTypes, setVisibleNodeTypes] = useState(() => new Set(NODE_TYPES.map((t) => t.key)))
   const [visibleEdgeTypes, setVisibleEdgeTypes] = useState(() => new Set(EDGE_TYPES.map((t) => t.key)))
@@ -277,6 +281,15 @@ export default function App() {
         <OnboardingOverlay
           onRunDemo={runDemo}
           onUpload={() => document.getElementById('topbar-file-input')?.click()}
+        />
+      )}
+      {onboardingDismissed && !helperBannerDismissed && !result && (
+        <HelperBanner
+          onRunDemo={runDemo}
+          onDismiss={() => {
+            localStorage.setItem('taxnet-helper-banner-dismissed', 'true')
+            setHelperBannerDismissed(true)
+          }}
         />
       )}
       <Header>
