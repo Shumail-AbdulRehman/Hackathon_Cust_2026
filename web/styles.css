@@ -1361,7 +1361,7 @@ td.numeric {
 .onboarding-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(30, 30, 36, 0.55);
+  background: color-mix(in oklch, var(--ink) 55%, transparent);
   backdrop-filter: blur(2px);
   display: flex;
   align-items: center;
@@ -1422,4 +1422,15 @@ td.numeric {
   font-size: 1.5rem;
   color: var(--ink-muted);
   cursor: pointer;
+  border-radius: var(--radius-sm);
+}
+
+.onboarding-close:hover {
+  color: var(--ink);
+}
+
+.onboarding-close:focus-visible {
+  outline: 2px solid var(--royal-ink);
+  outline-offset: 2px;
+  color: var(--ink);
 }
