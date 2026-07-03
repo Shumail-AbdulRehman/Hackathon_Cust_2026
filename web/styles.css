@@ -243,16 +243,6 @@ body {
   background: var(--paper-surface-2);
 }
 
-.btn-ghost {
-  background: transparent;
-  color: var(--ink-muted);
-}
-
-.btn-ghost:hover:not(:disabled) {
-  background: var(--paper-surface-2);
-  color: var(--ink);
-}
-
 .btn:focus-visible,
 .file-button:focus-within {
   outline: 2px solid var(--royal-ink);
@@ -1469,4 +1459,14 @@ td.numeric {
 .btn-ghost:hover {
   color: var(--ink);
   border-color: var(--rule-line);
+}
+
+@media (max-width: 480px) {
+  .helper-banner {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .helper-banner-actions {
+    width: 100%;
+  }
 }
