@@ -1,4 +1,4 @@
-# Python
+# Python virtual environments and bytecode
 __pycache__/
 *.py[cod]
 *$py.class
@@ -8,6 +8,8 @@ __pycache__/
 venv/
 ENV/
 env/
+
+# Build / distribution artifacts
 *.egg-info/
 dist/
 build/
@@ -18,7 +20,7 @@ build/
 htmlcov/
 .tox/
 
-# IDE
+# IDE / editor
 .idea/
 .vscode/
 *.swp
@@ -36,13 +38,15 @@ demo_cust_csv_report.json
 benchmark_suite_results.json
 *.report.json
 
-# Large external datasets
-data/open-sanctions/
-data/icij-offshore-leaks/
-data/pakistani-tax-data/*.xlsx
-data/pakistani-tax-data/API_*/
+# Data files (do not commit datasets or sample CSVs)
+data/
 
-# Keep small sample CSVs in data/cust-csv
+# Documentation binaries
+docs/*.pdf
+docs/*.html
+
+# Design / scaffolding artifacts
+.impeccable/
 
 # Large model / embedding / index artifacts
 *.gguf
@@ -72,7 +76,8 @@ Thumbs.db
 # Temporary files
 /tmp/
 *.tmp
-# Frontend deps
-web/node_modules
-web/dist
 
+# Frontend dependencies and build output
+web/node_modules/
+web/dist/
+web/bun.lock
