@@ -12,6 +12,7 @@ import Header from './components/Header'
 import TabNav from './components/TabNav'
 import PipelineStrip from './components/PipelineStrip'
 import MetricsRow from './components/MetricsRow'
+import SourceFlowSankey from './charts/SourceFlowSankey'
 import UploadZone from './components/UploadZone'
 import MappingReview from './components/MappingReview'
 import DatasetProfiles from './components/DatasetProfiles'
@@ -319,6 +320,11 @@ export default function App() {
             <div className="overview-layout">
               <PipelineStrip step={pipelineStep} />
               <MetricsRow metrics={metrics} loading={loading} />
+              {result && (
+                <section className="overview-charts">
+                  <SourceFlowSankey profiles={profiles} />
+                </section>
+              )}
               <div className="overview-grid">
                 <section className="panel upload-panel">
                   <div className="panel-head">
