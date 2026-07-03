@@ -1,6 +1,6 @@
 import { TIER_LABELS, TIER_ORDER } from '../constants'
 import { formatPKR, tierClass } from './chartUtils'
-import AssetTimelineChart from './AssetTimelineChart'
+import AssetTimeline from '../charts/AssetTimeline'
 import BenfordChart from './BenfordChart'
 import EgoGraph from './EgoGraph'
 import RiskCompositionWaterfall from '../charts/RiskCompositionWaterfall'
@@ -140,7 +140,7 @@ export default function CaseFile({ profile, graphData, onInvestigateInGraph }) {
           <h3>Asset timeline</h3>
         </div>
         <div className="case-section-body">
-          <AssetTimelineChart profile={profile} />
+          <AssetTimeline profile={profile} />
         </div>
       </section>
 
