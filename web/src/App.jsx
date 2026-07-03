@@ -13,6 +13,7 @@ import TabNav from './components/TabNav'
 import PipelineStrip from './components/PipelineStrip'
 import MetricsRow from './components/MetricsRow'
 import SourceFlowSankey from './charts/SourceFlowSankey'
+import RiskHistogram from './charts/RiskHistogram'
 import UploadZone from './components/UploadZone'
 import MappingReview from './components/MappingReview'
 import DatasetProfiles from './components/DatasetProfiles'
@@ -323,6 +324,7 @@ export default function App() {
               {result && (
                 <section className="overview-charts">
                   <SourceFlowSankey profiles={profiles} />
+                  <RiskHistogram profiles={profiles} selectedScore={selectedProfile?.deviation_score} />
                 </section>
               )}
               <div className="overview-grid">
