@@ -7,7 +7,7 @@ import {
   postRunFiles,
 } from './api'
 import { parsePreview } from './csvParser'
-import { TIER_LABELS, TIER_ORDER, NODE_TYPES, EDGE_TYPES } from './constants'
+import { NODE_TYPES, EDGE_TYPES } from './constants'
 import Header from './components/Header'
 import TabNav from './components/TabNav'
 import PipelineStrip from './components/PipelineStrip'
@@ -246,31 +246,13 @@ export default function App() {
 
   const metrics = useMemo(() => {
     if (!result) return null
-    if (result.mode === 'benchmark') {
-      return {
-        records: result.benchmark?.canonical_record_count || 0,
-        entities: result.benchmark?.entity_count || 0,
-        flagged: '—',
-        confidence: '—',
-        topTier: '—',
-      }
-    }
-    const allProfiles = result.scoring?.profiles || []
+    const profiles = result.scoring?.profiles || []
     const flagged = result.scoring?.flagged_profiles || []
-    const avgConfidence = allProfiles.length
-      ? (allProfiles.reduce((sum, p) => sum + (p.scoring_confidence || 0), 0) / allProfiles.length).toFixed(1)
-      : '—'
-    const tierCounts = {}
-    allProfiles.forEach((p) => {
-      tierCounts[p.risk_tier] = (tierCounts[p.risk_tier] || 0) + 1
-    })
-    const topTier = TIER_ORDER.find((t) => tierCounts[t] && tierCounts[t] > 0) || '—'
     return {
-      records: result.canonical_record_count || 0,
-      entities: result.resolution?.entities?.length || 0,
-      flagged: flagged.length,
-      confidence: avgConfidence === '—' ? avgConfidence : `${avgConfidence}%`,
-      topTier: TIER_LABELS[topTier] || topTier,
+      records: result.canonical_record_count ?? (result.canonical_records || []).length,
+      entities: Object.keys(result.resolution?.entities || {}).length,
+      flagged: `${flagged.length} (${profiles.length ? ((flagged.length / profiles.length) * 100).toFixed(0) : 0}%)`,
+      ml: result.ml_used ? 'XGBoost active' : 'Rule-based only',
     }
   }, [result])
 
@@ -336,7 +318,7 @@ export default function App() {
           <section className="tab-panel active" role="tabpanel" aria-labelledby="tab-overview">
             <div className="overview-layout">
               <PipelineStrip step={pipelineStep} />
-              <MetricsRow metrics={metrics} loading={loading && !result} />
+              <MetricsRow metrics={metrics} loading={loading} />
               <div className="overview-grid">
                 <section className="panel upload-panel">
                   <div className="panel-head">

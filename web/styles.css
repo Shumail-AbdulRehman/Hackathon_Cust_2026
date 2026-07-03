@@ -421,6 +421,11 @@ textarea:focus {
   border-top: 3px solid var(--parchment-gold);
 }
 
+.metric-caption {
+  font-size: 0.75rem;
+  color: var(--ink-muted);
+}
+
 .metric-card.loading {
   opacity: 0.7;
 }
